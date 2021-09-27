@@ -38,7 +38,8 @@ scenario_farm_effect <- "med" #must be "min", "lo", "med", "hi" or "max"
 Model <- function(inputs){
   inputs <- read.csv(here("inputs - general model.csv"))
   inputs <- as.data.table(inputs)
-  colnames(inputs) <- c("parameter", "description", "HIC", "MIC-I", "MIC-S", "LIC", "Value", "Min", "Lo", "Med", "Hi", "Max")
+  colnames(inputs) <- c("parameter", "description", "HIC", "MIC-I", "MIC-S", "LIC", "Value", "Min", "Lo", "Med", "Hi", "Max", 
+                        "LIC min", "LIC max", "MIC min", "MIC max", "HIC min", "HIC max")
   
   if(scenario_income == "HIC"){
     inputs[,"Value"] <- inputs[,"HIC"]
