@@ -1,0 +1,69 @@
+﻿scenario,parameter,description,value,distribution,low,high,
+human,well_dead,background mortality rate,0.001583005,uniform,0.0014,0.0018,Not Used. Instead we forecast net births using WB data
+human,birth_well,"background rate of entering the cohort (for example, if the cohort of interest was the total population this would be equivalent to the birth rate)",0.004212797,uniform,,,Not Used. Instead we forecast net births using WB data
+human,s_dead,mortality rate of resistant cases,0.347,uniform,0.3,0.4,"Dat et al., 2017"
+human,r_dead,mortality rate of susceptible cases,0.368,uniform,0.318426237,0.424568316,"Additional mortality from Teerawattanapong et al., 2018"
+human,s_cost,healthcare system cost of susceptible infections,666.82,uniform,600,725,"LOS from Duong et al., 2018. cost of bed day from Stenberg et al., 2018"
+human,r_cost,healthcare system cost of resistant infections,846.8614,uniform,800,900,"LOS from Duong et al., 2018. cost of bed day from Stenberg et al., 2018, additional LOS from resistant bacteria from Serra-Burriel et al., 2020"
+human,hrqol_death,health-related quality of life loss associated with an excess death,0,uniform,,,/
+human,hrqol_ill,health-related quality of life loss associated with susceptible infection,0.9795,uniform,0.95,0.99,Cassini et al.
+human,hrqol_res,health-related quality of life loss associated with resistant infection,0.973965,uniform,0.944465,0.984465,"Cassini et al., adjusted for additional LOS from Serra-Burriel et al., 2020"
+human,expected_ly,additional years of life expected based on age,46,uniform,,,https://apps.who.int/gho/data/?theme=main&vid=61830 and https://www.indexmundi.com/vietnam/demographics_profile.html
+human,lfpr,labour force participation rate,0.729745,uniform,0.7,0.75,World Bank
+human,lfpr_growth,annual growth in lfpr,0,uniform,-0.01,0.01,Not Used. Instead we forecast using WB data
+human,prod,international USD per year per worker,4400,uniform,4000,4800,Ministry of planning investment report https://vietnamnews.vn/economy/534756/viet-nams-labour-productivity-needs-to-catch-up-with-asean.html
+human,prod_growth,year-on-year per-worker productivity growth,0.0577,normal,0.0488,0.064,Ministry of planning investment report
+human,discount_rate,same for health outcomes and costs,0.094,uniform,0.03,0.12,"Calculations from Haacker, Hallett and Atun, 2020; based on per-person income growth rate of 6%"
+human,unpaid_prod,"the annual value of unpaid labour per adult, international dollars",2555,uniform,2300,2810,"Annual productivity adjusted by weekly unpaid work hours https://e.vnexpress.net/news/travel-life/invisible-labor-vietnamese-women-and-all-the-unpaid-hours-they-are-forced-to-accept-3658534.html#:~:text=Vietnamese%20women%20spend%20an%20average,working%20day%20of%20eight%20hours."
+human,background_qol,background quality of life for those in 'well',1,uniform,,,Assumed perfect health in absence of disease
+human,cost-effectiveness threshold,,2365,,603,4128,"from Woods et al., 2016 (adjusted for inflation)"
+human,sick_seq,chance of developing lifelong sequelae following an infection,0.405,uniform,0.3,0.5,Cassini et al.
+human,hrqol_seq,quality of life with sequelae,0.9355,uniform,0.9,0.97,Cassini et al.
+human,amr_growth,annual growth in background AMR prevalence,1.02844688,uniform,1,1.055,"Global AMR growth forecast by Alvarez-Uria et al,. 2018"
+human,disease_risk,chance of getting an infection,1.37E-04,uniform,0.0001,0.000175,"Rhodes et al., 2019"
+human,portion_resistant,portion of infections which are resistant,4.51E-02,uniform,0.04,0.06,"Serra-Burriel et al., 2020"
+human,well_r,probability of  getting resistance infections in a year,6.19E-06,uniform,0.000005,0.000007,Total incidence * portion resistant
+human,well_s,probability of getting susceptible infections,1.31E-04,uniform,,,Total incidence * (1 - portion resistant)
+human,population,population in 2021,9.82E+07,,,,World Bank
+human,n_population,please work,9.82E+07,,,,World Bank
+,,,,,,,
+chicken,all_dead,on-farm mortality rate,0.25,uniform,0.2,0.3,"From Phu et al. (2021). In a higher-mortality setting, Carrique-Mas et al. (2019) estimate 0.377612 during an 18-week cycle. was previously 0.032364682 ~ N from 0.024273512 to 0.040456"
+chicken,birth_well,background birth rate of livestock,1,uniform,,,/
+chicken,c_animal,general cost per animal kept,2.709,uniform,2.5,2.9,includes the cost of buying  a chick
+chicken,i_animal,income per animal sold,4.8,uniform,4.4,5.2,based on chicken weight (2.4kg) and income/chicken (2USD) from FAO and DEFRA reports
+chicken,s_cost,cost of treating susceptible infection,0,uniform,0,0.1,assumed that it is not worth the time of the farmer to tend to a sick chicken
+chicken,r_cost,cost of treating resistant infection,0,uniform,0,0.1,assumed that it is not worth the time of the farmer to tend to a sick chicken
+chicken,annual_cycles,number of annual production cycles for chickens,3,,,,"Phu et al., 2021 find that the median production cycle length is 18 weeks [IQR 16-20]"
+chicken,disease_risk,chance of getting an infection,0.4,uniform,0.3,0.5,"Carrique-Mas et al., 2019"
+chicken,portion_resistant,portion of infections which are resistant,0.22,uniform,0.14,0.3,"Nguyen et al., 2015"
+chicken,well_r,probability of  getting resistance infections in a year,0.088,uniform,0.05,0.126,disease risk * portion resistant - from above
+chicken,well_s,probability of getting susceptible infections,0.312,uniform,,,disease risk * (1 - portion resistant) - from above
+chicken,n_animals,number of animals per farm,2500,,,,"Nguyen et al., 2016"
+chicken,n_farms,number of farms nationwide,34266,,,,From ILRI
+,,,,,,,
+pig,all_dead,on-farm mortality rate,0,uniform,0,0.05,assumed that pigs do not die during the 4-month production cycle
+pig,birth_well,background birth rate of livestock,1,,,,
+pig,c_animal,general cost per animal kept,152.29,uniform,145,160,"from Coyne et al., 2020 (based on small-scale farms)"
+pig,i_animal,income per animal sold,169.28,uniform,160,180,"from Coyne et al., 2020 (based on small-scale farms). Most optimistic scenario"
+pig,s_cost,cost of treating susceptible infection,0.54,uniform,0,1,labour cost of looking after sick animal (from pig probiotic trial)
+pig,r_cost,cost of treating resistant infection,0.54,uniform,0,1,labour cost of looking after sick animal (from pig probiotic trial)
+pig,annual_cycles,number of annual production cycles for chickens,2.5,,,,from ILRI
+pig,disease_risk,chance of getting an infection,0,uniform,0,0.1,"In ILRI's data, no pigs with either antibiotic or probiotic feed additive experienced disease"
+pig,portion_resistant,portion of infections which are resistant,0.147,uniform,0.14,0.3,"Portion of infections MCR-positive for animals in Viet Nam overall, from Elbediwi et al., 2019"
+pig,well_r,probability of  getting resistance infections in a year,0,uniform,0,0.05,assume that any difference in morbidity is cpatured by differences in final bodyweight
+pig,well_s,probability of getting susceptible infections,0,uniform,0,0.05,assume that any difference in morbidity is cpatured by differences in final bodyweight
+pig,n_animals,number of animals per farm,9.5641451,,,,from ILRI. Total #animals / total # farms
+pig,n_farms,number of farms nationwide,2050944,,,,from ILRI
+,,,,,,,
+intervention,u_RH_low,low scenario for intervention effect on human AMR,-0.025,,,,"Drawn from range of values found in the literature (Booton et al., 2021; Opatowski et al., 2020; Tang et al., 2017; Zhang, Cui and Zhang, 2018)"
+intervention,u_RH_med,medium scenario for intervention effect on human AMR,-0.05,,-0.01,-0.2,""""""
+intervention,u_RH_hi,high scenario for intervention effect on human AMR,-0.1,,,,""""""
+intervention,u_RH_max,max scenario for intervention effect on human AMR,-0.16,,,,""""""
+intervention,admin_cost,administrative cost to the public sector (USD),1000000,uniform,10000000,0,Fudge factor
+intervention,pig_income_effect,proportional change in income per pig from intervention,0,uniform,-0.025,0.025,Analysis of preliminary data from ILRI's probiotic trial reveals no difference in weight
+intervention,pig_money_saved,money saved by using probiotic feed rather than antibiotic (USD),2.07,uniform,1,2.5,From ILRI
+intervention,chicken_income_effect,proportional change in income per chicken from intervention,0.071,uniform,0.05,0.1,"From Phu et al., 2021"
+intervention,farm_int_cost,annual intervention cost per farm ($USD),121.1,,30,80,"Veterinary visit cost from Phu et al., 2021. Other costs assume compensation according to average hourly pay in Viet Nam (4.3 USD) from http://www.salaryexplorer.com/salary-survey.php?loc=236&loctype=1"
+intervention,chicken_mort_effect,change in chicken mortality following intervention,-0.4,uniform,-0.3,-0.5,"Phu et al., 2021"
+intervention,pig_mort_effect,change in pig mortality following intervention,0,uniform,0.05,-0.05,"In ILRI's data, no pigs with either antibiotic or probiotic feed additive experienced disease"
+intervention,uptake,change in AMU following intervention,0.6666,uniform,0.5,0.75,"Change in farmer AMU after intervention from Phu et al., 2021"
