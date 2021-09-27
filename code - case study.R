@@ -22,6 +22,7 @@ library("reshape2")
 library("here")
 library("devtools")
 library("multisensi")
+library("here")
 
 # Global parameters and scenarios -----------------------------------------
 
@@ -86,7 +87,7 @@ cost_per_farm_village <- seminar_cost/farmers_per_seminar +
 # important in the sense that it can influence demographic trajectory
 ###
 
-pop <- read.csv("C:/Users/tresc/Desktop/AMR-Model/Population data for ARIMA/Vietnam Population.csv")
+pop <- read.csv(here("Vietnam Population.csv"))
 pop <- ts(pop$Population, start = 1960, frequency = 1)#
 ARIMApop <- auto.arima(pop, stepwise = F, approximation = F)
 plot(forecast(ARIMApop, tstop))
@@ -136,7 +137,7 @@ popchange.r_low <- popchange.r_low[2:tstop] #now it shows lower rates for 2021
 
 ####dependency ratio
 
-dependency <- read.csv("C:/Users/tresc/Desktop/AMR-Model/Population data for ARIMA/Viet Nam dependency ratio.csv")
+dependency <- read.csv(here("Viet Nam dependency ratio.csv"))
 dependency <- ts(dependency$Dependency.Ratio, start = 1960, frequency = 1)
 arimadependency <- auto.arima(dependency, stepwise = F, approximation = F)
 plot(forecast(arimadependency, tstop))
@@ -174,7 +175,7 @@ plot(portion_working)
 # caused by Enterobacteriaceae spp.)
 ###
 
-inputs <- read.csv("C:/Users/tresc/Desktop/AMR-Model/intervention 1/inputs.csv")
+inputs <- read.csv(here("inputs - case study.csv"))
 inputs <- as.data.table(inputs)
 colnames(inputs) <- c("scenario", "parameter", "description", "value", "distribution", "low", "high", "notes")
 
@@ -192,7 +193,7 @@ logitselfstart <- nls(logit_prevalence ~ SSlogis(logit_year)) ##not enough data 
 
 # Main Model --------------------------------------------------------------
 
-# model <- function(inputs){
+model <- function(inputs){
 
   inputs[ , value := as.numeric(as.character(value))]
   
@@ -1043,11 +1044,11 @@ logitselfstart <- nls(logit_prevalence ~ SSlogis(logit_year)) ##not enough data 
   
   outputs
   
-#   return(outputs)
-# 
-# }
-# 
-# model(inputs)
+  return(outputs)
+
+}
+
+model(inputs)
 
 # Scenario Analysis -------------------------------------------------------
 
@@ -1072,7 +1073,7 @@ scenario_analysis_amrgrowth[3,1:4] <- as.numeric(model(inputs)[1,1:4])
 scenario_amr_grow <- "max"
 scenario_analysis_amrgrowth[4,1:4] <- as.numeric(model(inputs)[1,1:4]) 
 
-write.xlsx(scenario_analysis_amrgrowth, "C:/Users/tresc/Desktop/AMR-Model/Intervention 1/Scenario Analysis AMR Growth.xlsx")
+write.xlsx(scenario_analysis_amrgrowth, "C:/Users/tresc/Desktop/Outputs/Case Study/Scenario Analysis AMR Growth.xlsx")
 
 
 ##Transmission to Humans, Productivity Method, Bacteria Concerned
@@ -1111,7 +1112,7 @@ scenario_analysis_all[3,2] <- as.numeric(model(inputs)[1,1])
 scenario_transmission <- "max"
 scenario_analysis_all[4,2] <- as.numeric(model(inputs)[1,1])
 
-write.xlsx(scenario_analysis_all, "C:/Users/tresc/Desktop/AMR-Model/Intervention 1/Scenario Analysis All.xlsx")
+write.xlsx(scenario_analysis_all, "C:/Users/tresc/Desktop/Outputs/Case Study/Scenario Analysis All.xlsx")
 
 scenario_analysis_Enterobacteriaceae <- matrix(rep(0), nrow = 4, ncol = 2)
 colnames(scenario_analysis_Enterobacteriaceae) <- c("Human Capital Approach", "Friction Cost Approach")
@@ -1139,7 +1140,7 @@ scenario_analysis_Enterobacteriaceae[3,2] <- as.numeric(model(inputs)[1,1])
 scenario_transmission <- "max"
 scenario_analysis_Enterobacteriaceae[4,2] <- as.numeric(model(inputs)[1,1])
 
-write.xlsx(scenario_analysis_Enterobacteriaceae, "C:/Users/tresc/Desktop/AMR-Model/Intervention 1/Scenario Analysis Enterobacteriaceae.xlsx")
+write.xlsx(scenario_analysis_Enterobacteriaceae, "C:/Users/tresc/Desktop/Outputs/Case Study/Scenario Analysis Enterobacteriaceae.xlsx")
 
 
 ##Intervention Frequeency and Village vs. Farm
@@ -1175,7 +1176,7 @@ scenario_analysis_intervention_frequency[4,1] <- "10"
 scenario_analysis_intervention_frequency[4,2] <- as.numeric(model(inputs)[1,1])
 scenario_analysis_intervention_frequency[4,2:8] <- as.numeric(model(inputs)[1,1:7])
 
-write.xlsx(scenario_analysis_intervention_frequency, "C:/Users/tresc/Desktop/AMR-Model/Intervention 1/Scenario Analysis Intervention Frequency Farm.xlsx")
+write.xlsx(scenario_analysis_intervention_frequency, "C:/Users/tresc/Desktop/Outputs/Case Study/Scenario Analysis Intervention Frequency Farm.xlsx")
 
 scenario <- "HCA"
 scenario_transmission <- "med"
@@ -1202,7 +1203,7 @@ scenario_analysis_intervention_frequency[4,1] <- "10"
 scenario_analysis_intervention_frequency[4,2] <- as.numeric(model(inputs)[1,1])
 scenario_analysis_intervention_frequency[4,2:8] <- as.numeric(model(inputs)[1,1:7])
 
-write.xlsx(scenario_analysis_intervention_frequency, "C:/Users/tresc/Desktop/AMR-Model/Intervention 1/Scenario Analysis Intervention Frequency Village.xlsx")
+write.xlsx(scenario_analysis_intervention_frequency, "C:/Users/tresc/Desktop/Outputs/Case Study/Scenario Analysis Intervention Frequency Village.xlsx")
 
 ##Timeframe
 
@@ -1238,7 +1239,7 @@ n.t <- 47
 scenario_analysis_timeframe[5,1] <- "46"
 scenario_analysis_timeframe[5,2:8] <- as.numeric(model(inputs)[1,1:7])
 
-write.xlsx(scenario_analysis_timeframe, "C:/Users/tresc/Desktop/AMR-Model/Intervention 1/Scenario Analysis Timeframe.xlsx")
+write.xlsx(scenario_analysis_timeframe, "C:/Users/tresc/Desktop/Outputs/Case Study/Scenario Analysis Timeframe.xlsx")
 
 ##to plot NMB at different timeframes
 
@@ -1334,7 +1335,7 @@ model(inputs)
 intervention_followup_period <- 10
 model(inputs)
 
-inputs <- read.csv("C:/Users/tresc/Desktop/AMR-Model/intervention 1/inputs.csv")
+inputs <- read.csv(here("inputs - case study.csv"))
 inputs <- as.data.table(inputs)
 
 # Montecarlo Simulation --------------------------------------
@@ -1354,7 +1355,7 @@ cost_per_farm_village <- seminar_cost/farmers_per_seminar +
 ##Creating a vector to store the NMBs 
 CEAC_NMB_vector <- c(rep(0,10000))
 
-inputs <- read.csv("C:/Users/tresc/Desktop/AMR-Model/intervention 1/inputs.csv")
+inputs <- read.csv(here("inputs - case study.csv"))
 inputs <- as.data.table(inputs)
 colnames(inputs) <- c("scenario", "parameter", "description", "value", "distribution", "low", "high", "notes")
 inputsPSA <- inputs
@@ -1417,7 +1418,7 @@ for(i in 1:10000){
 }
 
 #write.xlsx(CEAC_NMB_vector, "C:/Users/tresc/Desktop/AMR-Model/Intervention 1/Montecarlo Results.xlsx")
-write.xlsx(CEAC_NMB_vector, "C:/Users/tresc/Desktop/AMR-Model/Intervention 1/Montecarlo Results 2 July 2021.xlsx")
+write.xlsx(CEAC_NMB_vector, "C:/Users/tresc/Desktop/Outputs/Case Study/Montecarlo Results 2 July 2021.xlsx")
 
 density <- ecdf(CEAC_NMB_vector)
 plot(density,
@@ -1433,7 +1434,7 @@ max(MCresults)
 min(MCresults)
 mean(MCresults)
 
-MC <- read_xlsx("C:/Users/tresc/Desktop/AMR-Model/Intervention 1/Montecarlo Results 2 July 2021.xlsx")
+MC <- read_xlsx("C:/Users/tresc/Desktop/Outputs/Case Study/Montecarlo Results 2 July 2021.xlsx")
 MC <- MC[,2]
 MC <- as.numeric(as.character(unlist(MC)))
 
@@ -1448,7 +1449,7 @@ abline(v = 0, col = "blue", lty = 2, lwd = 2)
 # Tornado Plot ------------------------------------------------------------
 
 ##Setting Scenario
-inputs <- read.csv("C:/Users/tresc/Desktop/AMR-Model/intervention 1/inputs.csv")
+inputs <- read.csv(here("inputs - case study.csv"))
 inputs <- as.data.table(inputs)
 colnames(inputs) <- c("scenario", "parameter", "description", "value", "distribution", "low", "high", "notes")
 

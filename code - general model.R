@@ -22,6 +22,7 @@ library("reshape2")
 library("here")
 library("devtools")
 library("multisensi")
+library("here")
 
 
 # scenarios ---------------------------------------------------------------
@@ -36,7 +37,7 @@ scenario_farm_effect <- "med" #must be "min", "lo", "med", "hi" or "max"
 # Main Model --------------------------------------------------------
 
 Model <- function(inputs){
-  inputs <- read.csv("C:/Users/tresc/Desktop/AMR-Model/General model/iinputs.csv")
+  inputs <- read.csv(here("inputs - general model.csv"))
   inputs <- as.data.table(inputs)
   colnames(inputs) <- c("parameter", "description", "HIC", "MIC-I", "MIC-S", "LIC", "Value", "Min", "Lo", "Med", "Hi", "Max")
   
@@ -1421,10 +1422,10 @@ scenario_analysis_HIC[4,4] <- as.numeric(Model(inputs)[1,1])
 scenario_farm_effect       <- "max"
 scenario_analysis_HIC[4,5] <- as.numeric(Model(inputs)[1,1])
   
-write.xlsx(scenario_analysis_LIC, "C:/Users/tresc/Desktop/AMR-Model/General model/Outputs/Scenario Analysis LIC.xlsx")
-write.xlsx(scenario_analysis_MIC_I, "C:/Users/tresc/Desktop/AMR-Model/General model/Outputs/Scenario Analysis MIC-I.xlsx")
-write.xlsx(scenario_analysis_MIC_S, "C:/Users/tresc/Desktop/AMR-Model/General model/Outputs/Scenario Analysis MIC-S.xlsx")
-write.xlsx(scenario_analysis_HIC, "C:/Users/tresc/Desktop/AMR-Model/General model/Outputs/Scenario Analysis HIC.xlsx")
+write.xlsx(scenario_analysis_LIC, "C:/Users/tresc/Desktop/Outputs/Scenario Analysis LIC.xlsx")
+write.xlsx(scenario_analysis_MIC_I, "C:/Users/tresc/Desktop/Outputs/Scenario Analysis MIC-I.xlsx")
+write.xlsx(scenario_analysis_MIC_S, "C:/Users/tresc/Desktop/Outputs/Scenario Analysis MIC-S.xlsx")
+write.xlsx(scenario_analysis_HIC, "C:/Users/tresc/Desktop/Outputs/Scenario Analysis HIC.xlsx")
   
 
 
