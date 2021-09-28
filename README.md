@@ -1,5 +1,5 @@
 # Model-Code-and-Inputs
-Code and necessary inputs for a holistic macroeconomic model for evaluating the cost-effectiveness of AMR interventions in agriculture across countries, and with a case study in Viet Nam :nail_care:
+Code :computer: and necessary inputs for a holistic macroeconomic :chart: model for evaluating the cost-effectiveness of AMR interventions in agriculture :pig: 🐣 across countries :earth_asia:, and with a case study in Viet Nam :vietnam:
 
 # Paper Information
 Title: A Holistic Macroeconomic Model for Evaluating the Cost-Effectiveness of AMR Interventions in Agriculture across Countries <br> <br>
