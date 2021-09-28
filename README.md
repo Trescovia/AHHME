@@ -1,14 +1,13 @@
 # Model-Code-and-Inputs
-# Model_Code_and_Inputs
 Code and necessary inputs for a holistic macroeconomic model for evaluating the cost-effectiveness of AMR interventions in agriculture across countries, and with a case study in Viet Nam
 
 # Paper Information
-## Title: A Holistic Macroeconomic Model for Evaluating the Cost-Effectiveness of AMR Interventions in Agriculture across Countries
-## Authors (alphabetical): 
+Title: A Holistic Macroeconomic Model for Evaluating the Cost-Effectiveness of AMR Interventions in Agriculture across Countries
+Authors (alphabetical): 
 From LSHTM - Tresco Emes, Gwenan M Knight, Nichola Naylor, Jeff Waage
 From ILRI - Dang Sinh, Le Trang
 From OUCRU - tbc
-## Location: TBD (medRxiv)
+Location: TBD (medRxiv)
 
 # Contents of Repo
 
