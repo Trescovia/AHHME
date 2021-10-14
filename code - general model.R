@@ -1427,7 +1427,10 @@ write.xlsx(scenario_analysis_MIC_I, "C:/Users/tresc/Desktop/Outputs/Scenario Ana
 write.xlsx(scenario_analysis_MIC_S, "C:/Users/tresc/Desktop/Outputs/Scenario Analysis MIC-S.xlsx")
 write.xlsx(scenario_analysis_HIC, "C:/Users/tresc/Desktop/Outputs/Scenario Analysis HIC.xlsx")
   
-
+write.xlsx(scenario_analysis_LIC, "C:/Users/tresc/Desktop/Outputs/Scenario Analysis LIC.xlsx")
+write.xlsx(scenario_analysis_MIC_I, "C:/Users/tresc/Desktop/Outputs/Scenario Analysis MIC-I.xlsx")
+write.xlsx(scenario_analysis_MIC_S, "C:/Users/tresc/Desktop/Outputs/Scenario Analysis MIC-S.xlsx")
+write.xlsx(scenario_analysis_HIC, "C:/Users/tresc/Desktop/Outputs/Scenario Analysis HIC.xlsx")
 
   
 
