@@ -23,6 +23,7 @@ library("here")
 library("devtools")
 library("multisensi")
 
+### nn - Tresco to tidy up at the end 
 
 # scenarios ---------------------------------------------------------------
 
@@ -32,7 +33,7 @@ scenario_transmission <- "med" #must be "low", "med", "hi" or "max"
 scenario_frequency <- "biennial" #must be "annual", "biennial" or "triennial"
 scenario_farm_effect <- "med" #must be "min", "lo", "med", "hi" or "max"
 
-
+## 
 # Main Model --------------------------------------------------------
 
 Model <- function(inputs){
@@ -71,7 +72,9 @@ Model <- function(inputs){
   }
   
   n.t <- inputs[parameter=="n.t",Value] + 1
-  
+### nn - for a cohort model then Life expectancy - average age makes sense for nt
+  # but to note this is not a cohort model but a population one
+  # but i think we can justify just doing 20 years given uncertainty in trajectories etc.
 
 # Population growth -------------------------------------------------------
   
@@ -110,6 +113,10 @@ Model <- function(inputs){
   m_param[ , "r"] <- rep(inputs[parameter=="well_sick", Value]*inputs[parameter=="portion_res",Value], n.t)
   #chance of developing a resistant infection in a year
   
+  ## nn - Gwen could you look over whether the right proportions/rates etc. are being used in terms of epi terminology 
+  # in a difference eq type model (usually we adapt rates into probabilities for cohort models) - so just want to check
+  # this is really incidence not just a proportion that doesn't take into account time or whether it doesn't matter with this structure?
+  
   m_param[ , "s"] <- rep(inputs[parameter=="well_sick", Value]*(1-inputs[parameter=="portion_res",Value]), n.t)
   #chance of developing a susceptible infection in a year
   
@@ -146,7 +153,8 @@ Model <- function(inputs){
   }
   
   for(i in 1:n.t){
-    if(m_param[i, "r"] > 0.9*(m_param[1,"r"]+m_param[1,"s"])){ 
+    if(m_param[i, "r"] > 0.9*(m_param[1,"r"]+m_param[1,"s"])){ ## nn - for 0.9 make a variable, and list at the top
+      # so it's easy to change any assumed variables thoughtout the model
       m_param[i, "r"] <- 0.9*(m_param[1,"r"]+m_param[1,"s"]) 
     }
     m_param[i, "s"] <- m_param[1,"r"]+m_param[1,"s"] - m_param[i, "r"] 
@@ -185,7 +193,8 @@ Model <- function(inputs){
     }
     return(m_param)
   }
-  #assumes that everyone is born healthy!
+  #assumes that everyone is born healthy! ##nn - is that true? or you're just assuming not born with resistant/susectible infection etc.?
+  # this is me being pedantic but might be better to put "well"
   
   m_param <- f_human_epi(m_param,n.t) 
   #applying the epi function for humans (base case)
@@ -366,12 +375,7 @@ Model <- function(inputs){
     }
   }
   
-  # for (j in 1:length(state_names)) {
-  #   for (i in 3:(n.t)){
-  #     m_rwd_prod[i,j] <- m_rwd_prod[2,j] * (1-dr_pgrowth)^(i-2)
-  #   }
-  # }
-  
+
 
 # Animal Epi Model --------------------------------------------------------
 
@@ -1422,15 +1426,12 @@ scenario_analysis_HIC[4,4] <- as.numeric(Model(inputs)[1,1])
 scenario_farm_effect       <- "max"
 scenario_analysis_HIC[4,5] <- as.numeric(Model(inputs)[1,1])
   
-write.xlsx(scenario_analysis_LIC, "C:/Users/tresc/Desktop/Outputs/Scenario Analysis LIC.xlsx")
-write.xlsx(scenario_analysis_MIC_I, "C:/Users/tresc/Desktop/Outputs/Scenario Analysis MIC-I.xlsx")
-write.xlsx(scenario_analysis_MIC_S, "C:/Users/tresc/Desktop/Outputs/Scenario Analysis MIC-S.xlsx")
-write.xlsx(scenario_analysis_HIC, "C:/Users/tresc/Desktop/Outputs/Scenario Analysis HIC.xlsx")
-  
-write.xlsx(scenario_analysis_LIC, "C:/Users/tresc/Desktop/Outputs/Scenario Analysis LIC.xlsx")
-write.xlsx(scenario_analysis_MIC_I, "C:/Users/tresc/Desktop/Outputs/Scenario Analysis MIC-I.xlsx")
-write.xlsx(scenario_analysis_MIC_S, "C:/Users/tresc/Desktop/Outputs/Scenario Analysis MIC-S.xlsx")
-write.xlsx(scenario_analysis_HIC, "C:/Users/tresc/Desktop/Outputs/Scenario Analysis HIC.xlsx")
+# write.xlsx(scenario_analysis_LIC, "C:/Users/tresc/Desktop/Outputs/Scenario Analysis LIC.xlsx")
+# write.xlsx(scenario_analysis_MIC_I, "C:/Users/tresc/Desktop/Outputs/Scenario Analysis MIC-I.xlsx")
+# write.xlsx(scenario_analysis_MIC_S, "C:/Users/tresc/Desktop/Outputs/Scenario Analysis MIC-S.xlsx")
+# write.xlsx(scenario_analysis_HIC, "C:/Users/tresc/Desktop/Outputs/Scenario Analysis HIC.xlsx")
+
+
 
   
 
