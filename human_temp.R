@@ -79,14 +79,14 @@ scenario_farm_effect <- "med" #must be "min", "lo", "med", "hi" or "max"
                                3, length(parameter_names)),
                    dimnames= list(1:n.t, c("base", "2disease",
                                                      "recover.dead"),
-                                  parameter_names))
+                                  parameter_names)) 
   
 ## vector for growth in resistance overtime:
   amr_growth <- inputs[parameter=="amr_grow", Value]
   r.vec <- c(inputs[parameter=="portion_res",Value],rep(0, n.t-1))
   for (i in 2:n.t){
   r.vec[i] <- r.vec[i-1]*amr_growth
-}
+} #TE what about maximum resistance prevalence?
 
   ## defining resistance overtime in the tm
   tm[ ,"base" ,"r"] <- r.vec*inputs[parameter=="well_sick", Value]

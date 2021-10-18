@@ -23,24 +23,25 @@ library("here")
 library("devtools")
 library("multisensi")
 
-### nn - Tresco to tidy up at the end 
-
 # scenarios ---------------------------------------------------------------
 
 scenario_income <- "LIC" #must be "LIC", "MIC-S", "MIC-I", or "HIC"
 scenario_prod <- "HCA" #must be "HCA" or "FCA"
 scenario_transmission <- "med" #must be "low", "med", "hi" or "max"
-scenario_frequency <- "biennial" #must be "annual", "biennial" or "triennial"
 scenario_farm_effect <- "med" #must be "min", "lo", "med", "hi" or "max"
+
+
+# inputs ------------------------------------------------------------------
+
+inputs <- read.csv(here("inputs - general model.csv"))
+inputs <- as.data.table(inputs)
+colnames(inputs) <- c("parameter", "description", "HIC", "MIC-I", "MIC-S", "LIC", "Value", "Min", "Lo", "Med", "Hi", "Max", 
+                      "LIC min", "LIC max", "MIC min", "MIC max", "HIC min", "HIC max")
 
 ## 
 # Main Model --------------------------------------------------------
 
 Model <- function(inputs){
-  inputs <- read.csv(here("inputs - general model.csv"))
-  inputs <- as.data.table(inputs)
-  colnames(inputs) <- c("parameter", "description", "HIC", "MIC-I", "MIC-S", "LIC", "Value", "Min", "Lo", "Med", "Hi", "Max", 
-                        "LIC min", "LIC max", "MIC min", "MIC max", "HIC min", "HIC max")
   
   if(scenario_income == "HIC"){
     inputs[,"Value"] <- inputs[,"HIC"]
@@ -72,9 +73,9 @@ Model <- function(inputs){
   }
   
   n.t <- inputs[parameter=="n.t",Value] + 1
-### nn - for a cohort model then Life expectancy - average age makes sense for nt
-  # but to note this is not a cohort model but a population one
-  # but i think we can justify just doing 20 years given uncertainty in trajectories etc.
+  
+  max_res <- 0.9
+  #the maximum portion of infections that can be from resistant bacteria
 
 # Population growth -------------------------------------------------------
   
@@ -113,10 +114,6 @@ Model <- function(inputs){
   m_param[ , "r"] <- rep(inputs[parameter=="well_sick", Value]*inputs[parameter=="portion_res",Value], n.t)
   #chance of developing a resistant infection in a year
   
-  ## nn - Gwen could you look over whether the right proportions/rates etc. are being used in terms of epi terminology 
-  # in a difference eq type model (usually we adapt rates into probabilities for cohort models) - so just want to check
-  # this is really incidence not just a proportion that doesn't take into account time or whether it doesn't matter with this structure?
-  
   m_param[ , "s"] <- rep(inputs[parameter=="well_sick", Value]*(1-inputs[parameter=="portion_res",Value]), n.t)
   #chance of developing a susceptible infection in a year
   
@@ -153,9 +150,8 @@ Model <- function(inputs){
   }
   
   for(i in 1:n.t){
-    if(m_param[i, "r"] > 0.9*(m_param[1,"r"]+m_param[1,"s"])){ ## nn - for 0.9 make a variable, and list at the top
-      # so it's easy to change any assumed variables thoughtout the model
-      m_param[i, "r"] <- 0.9*(m_param[1,"r"]+m_param[1,"s"]) 
+    if(m_param[i, "r"] > max_res *(m_param[1,"r"]+m_param[1,"s"])){ 
+      m_param[i, "r"] <- max_res *(m_param[1,"r"]+m_param[1,"s"]) 
     }
     m_param[i, "s"] <- m_param[1,"r"]+m_param[1,"s"] - m_param[i, "r"] 
   }
@@ -193,8 +189,7 @@ Model <- function(inputs){
     }
     return(m_param)
   }
-  #assumes that everyone is born healthy! ##nn - is that true? or you're just assuming not born with resistant/susectible infection etc.?
-  # this is me being pedantic but might be better to put "well"
+  #assumes that everyone is born healthy well (i.e. no bacterial infections)
   
   m_param <- f_human_epi(m_param,n.t) 
   #applying the epi function for humans (base case)
@@ -322,11 +317,11 @@ Model <- function(inputs){
   rownames(m_rwd_prod) <- paste("cycle", 0:(n.t-1), sep = "")
   
   r_r_prod <- -1 * inputs[parameter == "los_res", Value] * 
-    ((inputs[parameter == "prod_pc", Value]*inputs[parameter == "lfpr", Value]) + 
+    ((inputs[parameter == "prod_pc", Value]*inputs[parameter == "lfpr", Value])* 
     inputs[parameter == "unpaid_prod_pc", Value])
   
   r_s_prod <- -1 * inputs[parameter == "los_sus", Value] *
-  ((inputs[parameter == "prod_pc", Value]*inputs[parameter == "lfpr", Value]) +
+  ((inputs[parameter == "prod_pc", Value]*inputs[parameter == "lfpr", Value])*
       inputs[parameter == "unpaid_prod_pc", Value])
 
   r_w_prod <- 0
@@ -340,7 +335,7 @@ Model <- function(inputs){
   
   remaining_work_years <- inputs[parameter == "remaining_work_years", Value]
   
-  yearly_prod <- inputs[parameter == "prod_pc", Value]*inputs[parameter == "lfpr", Value] +
+  yearly_prod <- inputs[parameter == "prod_pc", Value]*inputs[parameter == "lfpr", Value]*
     inputs[parameter == "unpaid_prod_pc", Value]
   
   pv_fut_prod <- c(rep(0,remaining_work_years))
@@ -465,8 +460,8 @@ Model <- function(inputs){
   #make it so that the total incidence of infections stays the same, and only the
   #portion of them that are resistant changes
   for(i in 1:n.t){
-    if(m_param_c_s_base[i, "r"] > 0.9*(m_param_c_s_base[1, "r"] + m_param_c_s_base[1, "s"])){
-      m_param_c_s_base[i, "r"] <- 0.9*(m_param_c_s_base[1, "r"] + m_param_c_s_base[1, "s"])
+    if(m_param_c_s_base[i, "r"] > max_res * (m_param_c_s_base[1, "r"] + m_param_c_s_base[1, "s"])){
+      m_param_c_s_base[i, "r"] <- max_res * (m_param_c_s_base[1, "r"] + m_param_c_s_base[1, "s"])
     }
     m_param_c_s_base[i, "s"] <- m_param_c_s_base[1, "r"] + m_param_c_s_base[1, "s"] - m_param_c_s_base[i, "r"]
   }
@@ -505,8 +500,8 @@ Model <- function(inputs){
   #make it so that the total incidence of infections stays the same, and only the
   #portion of them that are resistant changes
   for(i in 1:n.t){
-    if(m_param_c_i_base[i, "r"] > 0.9*(m_param_c_i_base[1, "r"] + m_param_c_i_base[1, "s"])){
-      m_param_c_i_base[i, "r"] <- 0.9*(m_param_c_i_base[1, "r"] + m_param_c_i_base[1, "s"])
+    if(m_param_c_i_base[i, "r"] > max_res * (m_param_c_i_base[1, "r"] + m_param_c_i_base[1, "s"])){
+      m_param_c_i_base[i, "r"] <- max_res * (m_param_c_i_base[1, "r"] + m_param_c_i_base[1, "s"])
     }
     m_param_c_i_base[i, "s"] <- m_param_c_i_base[1, "r"] + m_param_c_i_base[1, "s"] - m_param_c_i_base[i, "r"]
   }
@@ -545,8 +540,8 @@ Model <- function(inputs){
   #make it so that the total incidence of infections stays the same, and only the
   #portion of them that are resistant changes
   for(i in 1:n.t){
-    if(m_param_p_s_base[i, "r"] > 0.9*(m_param_p_s_base[1, "r"] + m_param_p_s_base[1, "s"])){
-      m_param_p_s_base[i, "r"] <- 0.9*(m_param_p_s_base[1, "r"] + m_param_p_s_base[1, "s"])
+    if(m_param_p_s_base[i, "r"] > max_res * (m_param_p_s_base[1, "r"] + m_param_p_s_base[1, "s"])){
+      m_param_p_s_base[i, "r"] <- max_res * (m_param_p_s_base[1, "r"] + m_param_p_s_base[1, "s"])
     }
     m_param_p_s_base[i, "s"] <- m_param_p_s_base[1, "r"] + m_param_p_s_base[1, "s"] - m_param_p_s_base[i, "r"]
   }
@@ -585,8 +580,8 @@ Model <- function(inputs){
   #make it so that the total incidence of infections stays the same, and only the
   #portion of them that are resistant changes
   for(i in 1:n.t){
-    if(m_param_p_i_base[i, "r"] > 0.9*(m_param_p_i_base[1, "r"] + m_param_p_i_base[1, "s"])){
-      m_param_p_i_base[i, "r"] <- 0.9*(m_param_p_i_base[1, "r"] + m_param_p_i_base[1, "s"])
+    if(m_param_p_i_base[i, "r"] > max_res * (m_param_p_i_base[1, "r"] + m_param_p_i_base[1, "s"])){
+      m_param_p_i_base[i, "r"] <- max_res * (m_param_p_i_base[1, "r"] + m_param_p_i_base[1, "s"])
     }
     m_param_p_i_base[i, "s"] <- m_param_p_i_base[1, "r"] + m_param_p_i_base[1, "s"] - m_param_p_i_base[i, "r"]
   }
@@ -750,8 +745,8 @@ chicken_income_effect <- as.numeric()
   
   #make sure that the total number of infections remains constant
   for(i in 1:n.t){
-    if(m_param2[i, "r"] > 0.9*(m_param2[1,"r"]+m_param2[1,"s"])){ 
-      m_param2[i, "r"] <- 0.9*(m_param2[1,"r"]+m_param2[1,"s"]) 
+    if(m_param2[i, "r"] > max_res * (m_param2[1,"r"]+m_param2[1,"s"])){ 
+      m_param2[i, "r"] <- max_res * (m_param2[1,"r"]+m_param2[1,"s"]) 
     }
     m_param2[i, "s"] <- m_param2[1,"r"]+m_param2[1,"s"] - m_param2[i, "r"]
   }
@@ -1073,110 +1068,30 @@ chicken_income_effect <- as.numeric()
   
   NMB_p_s <- (incr_benefit_p_s-incr_cost_p_s) * n_farms_pig_small
   
-#intervention costs
+  max_cost_discounted <- NMB_c_i + NMB_c_s + NMB_p_i + NMB_p_s + NMB_health + NMB_prod
   
-  farmers_per_seminar <- 10
-  hourly_compensation <- inputs[parameter == "hourly_wage", Value]
-  seminar_length <- 3
-  visits_per_year <- 3
-  visit_length_individual <- 2
-  transport_cost <- inputs[parameter == "transport_cost", Value]
-  seminar_cost <- (4+seminar_length)*hourly_compensation
-  visit_cost <- (4+visit_length_individual)*hourly_compensation
-  group_size <- 10
-  additional_time_per_farm <- 0.5
-  visit_length_group <- 2
-  
-  #smallholder
-  cost_group <- seminar_cost/farmers_per_seminar + 
-    seminar_length*hourly_compensation + transport_cost +
-    (visit_cost + ((group_size - 1)*additional_time_per_farm*hourly_compensation))*(visits_per_year/group_size) +
-    visit_length_group*hourly_compensation*visits_per_year
-  
-  #industrial
-  cost_ind <- visit_cost*visits_per_year + 
-    visit_length_individual*hourly_compensation*visits_per_year +
-    seminar_cost/farmers_per_seminar +
-    seminar_length*hourly_compensation +
-    transport_cost
-  
-  frequency <- as.numeric()
-  if (scenario_frequency == "annual"){
-    frequency <- 1
-  } else if (scenario_frequency == "biennial"){
-    frequency <- 0.5
-  } else if (scenario_frequency == "triennial"){
-    frequency <- (1/3)
+  #convert maximum total cost to maximum annual cost
+  discount_vector <- rep(0,n.t)
+  discount_vector[1] <- 1
+  for(i in 2:length(discount_vector)){
+    discount_vector[i] = discount_vector[i-1]*(1-dr)
   }
+  discount_sum <- sum(discount_vector)
   
-  int_cost_admin <- inputs[parameter == "admin_cost", Value]
-  int_cost_chicken_small_annual <- frequency * n_farms_chicken_small * cost_group
-  int_cost_chicken_ind_annual   <- frequency * n_farms_chicken_ind   * cost_ind
-  int_cost_pig_small_annual     <- frequency * n_farms_pig_small     * cost_group
-  int_cost_pig_ind_annual       <- frequency * n_farms_pig_ind       * cost_ind  
-  
-  #discount the annual intervention cost, assuming that the cost scales with
-  #productivity growth
-  
-  int_cost_chicken_small <- rep(0,n.t-1)
-  int_cost_chicken_small[1] <- int_cost_chicken_small_annual
-  for (i in 2:(n.t)){
-    int_cost_chicken_small[i] <- f_di(int_cost_chicken_small[i-1],dr_pgrowth)
-  }  
-  int_cost_chicken_small <- sum(int_cost_chicken_small)
-  
-  int_cost_chicken_ind <- rep(0,n.t-1)
-  int_cost_chicken_ind[1] <- int_cost_chicken_ind_annual
-  for (i in 2:(n.t)){
-    int_cost_chicken_ind[i] <- f_di(int_cost_chicken_ind[i-1],dr_pgrowth)
-  }  
-  int_cost_chicken_ind <- sum(int_cost_chicken_ind)
-  
-  int_cost_pig_small <- rep(0,n.t-1)
-  int_cost_pig_small[1] <- int_cost_pig_small_annual
-  for (i in 2:(n.t)){
-    int_cost_pig_small[i] <- f_di(int_cost_pig_small[i-1],dr_pgrowth)
-  }  
-  int_cost_pig_small <- sum(int_cost_pig_small)
-  
-  int_cost_pig_ind <- rep(0,n.t-1)
-  int_cost_pig_ind[1] <- int_cost_pig_ind_annual
-  for (i in 2:(n.t)){
-    int_cost_pig_ind[i] <- f_di(int_cost_pig_ind[i-1],dr_pgrowth)
-  }  
-  int_cost_pig_ind <- sum(int_cost_pig_ind)
-  
-  NMB_cost <- -1 * (int_cost_admin + int_cost_chicken_ind + int_cost_chicken_small +
-                      int_cost_pig_ind + int_cost_pig_small)
-  
-  NMB_total <- NMB_c_i + NMB_c_s + NMB_p_i + NMB_p_s + NMB_health + NMB_prod + 
-    NMB_cost
+  max_cost_annual <- max_cost_discounted / discount_sum
   
   money_saved_health <- -1 * incr_cost_health
   valuation_QALYs <- QALYs_saved*wtp
   
-  net_benefit_c_i <- NMB_c_i - int_cost_chicken_ind
-  net_benefit_c_s <- NMB_c_s - int_cost_chicken_small
-  net_benefit_p_i <- NMB_p_i - int_cost_pig_ind
-  net_benefit_p_s <- NMB_p_s - int_cost_pig_small
-  
-  ###also get the NMB _from_ each agricultural sector by subtracting the
-  #sector-specific intervention cost from that sector
-  
 #Final outputs
-  outputs <- data.table("Overall Net Monetary Benefit"=NMB_total,
-                        "Overall Implementation Cost"=NMB_cost,
-                        "Productivity Gained"=NMB_prod,
+  outputs <- data.table("Maximum Acceptable Cost (Annual)"=max_cost_annual,
+                        "Value of Productivity Gained"=NMB_prod,
                         "Cost Saved for Healthcare"=money_saved_health,
                         "Value of DALYs Averted"=valuation_QALYs,
                         "Increased Profit - Smallholder Pig Farms"=NMB_p_s,
                         "Increased Profit - Industrial Pig Farms"=NMB_p_i,
                         "Increased Profit - Smallholder Chicken Farms"=NMB_c_s,
-                        "Increased Profit - Industrial Chicken Farms"=NMB_c_i,
-                        "Increased Profit - Smallholder Pig Farms (Net of Intervention Cost)"=NMB_p_s-int_cost_pig_small,
-                        "Increased Profit - Industrial Pig Farms (Net of Intervention Cost)"=NMB_p_i-int_cost_pig_ind,
-                        "Increased Profit - Smallholder Chicken Farms (Net of Intervention Cost)"=NMB_c_s-int_cost_chicken_small,
-                        "Increased Profit - Industrial Chicken Farms (Net of Intervention Cost)"=NMB_c_i-int_cost_chicken_ind)
+                        "Increased Profit - Industrial Chicken Farms"=NMB_c_i)
   outputs
   
   return(outputs)
@@ -1186,9 +1101,11 @@ chicken_income_effect <- as.numeric()
   Model(inputs)
   
 
-# Scenario Analysis -------------------------------------------------------
+# Figures and Tables -------------------------------------------------------
+  
 
-scenario_frequency <- "biennial"
+# Table 1 - Maximum Cost under Each Scenario ------------------------------
+
 scenario_prod      <- "HCA"  
 
 scenario_analysis_LIC <- matrix(rep(0), ncol = 5, nrow = 4)
@@ -1209,7 +1126,7 @@ scenario_analysis_HIC <- scenario_analysis_LIC
 #LIC
 scenario_income    <- "LIC"
 
-scenario_transmission <- "lo"
+scenario_transmission <- "low"
 
 scenario_farm_effect       <- "min"
 scenario_analysis_LIC[1,1] <- as.numeric(Model(inputs)[1,1])
@@ -1264,7 +1181,7 @@ scenario_analysis_LIC[4,5] <- as.numeric(Model(inputs)[1,1])
 #MIC-I
 scenario_income    <- "MIC-I"
 
-scenario_transmission <- "lo"
+scenario_transmission <- "low"
 
 scenario_farm_effect       <- "min"
 scenario_analysis_MIC_I[1,1] <- as.numeric(Model(inputs)[1,1])
@@ -1319,7 +1236,7 @@ scenario_analysis_MIC_I[4,5] <- as.numeric(Model(inputs)[1,1])
 #MIC-S
 scenario_income    <- "MIC-S"
 
-scenario_transmission <- "lo"
+scenario_transmission <- "low"
 
 scenario_farm_effect       <- "min"
 scenario_analysis_MIC_S[1,1] <- as.numeric(Model(inputs)[1,1])
@@ -1374,7 +1291,7 @@ scenario_analysis_MIC_S[4,5] <- as.numeric(Model(inputs)[1,1])
 #HIC
 scenario_income    <- "HIC"
 
-scenario_transmission <- "lo"
+scenario_transmission <- "low"
 
 scenario_farm_effect       <- "min"
 scenario_analysis_HIC[1,1] <- as.numeric(Model(inputs)[1,1])
@@ -1426,11 +1343,777 @@ scenario_analysis_HIC[4,4] <- as.numeric(Model(inputs)[1,1])
 scenario_farm_effect       <- "max"
 scenario_analysis_HIC[4,5] <- as.numeric(Model(inputs)[1,1])
   
-# write.xlsx(scenario_analysis_LIC, "C:/Users/tresc/Desktop/Outputs/Scenario Analysis LIC.xlsx")
-# write.xlsx(scenario_analysis_MIC_I, "C:/Users/tresc/Desktop/Outputs/Scenario Analysis MIC-I.xlsx")
-# write.xlsx(scenario_analysis_MIC_S, "C:/Users/tresc/Desktop/Outputs/Scenario Analysis MIC-S.xlsx")
-# write.xlsx(scenario_analysis_HIC, "C:/Users/tresc/Desktop/Outputs/Scenario Analysis HIC.xlsx")
+write.xlsx(scenario_analysis_LIC, "C:/Users/tresc/Desktop/Outputs/Table 1 A.xlsx")
+write.xlsx(scenario_analysis_MIC_I, "C:/Users/tresc/Desktop/Outputs/Table 1 B.xlsx")
+write.xlsx(scenario_analysis_MIC_S, "C:/Users/tresc/Desktop/Outputs/Table 1 C.xlsx")
+write.xlsx(scenario_analysis_HIC, "C:/Users/tresc/Desktop/Outputs/Table 1 D.xlsx")
 
+
+# Figure 2 - Distribution of Results from Montecarlo Simulation -----------
+
+scenario_prod <- "HCA" 
+scenario_transmission <- "med"
+number_runs <- 1000
+
+###LIC
+
+scenario_income <- "LIC"
+
+LIC_MC_Vector <- rep(0, number_runs)
+
+inputs_LIC <- read.csv(here("inputs - general model.csv"))
+inputs_LIC <- as.data.table(inputs_LIC)
+colnames(inputs_LIC) <- c("parameter", "description", "HIC", "MIC-I", "MIC-S", "LIC", "Value", "Min", "Lo", "Med", "Hi", "Max", 
+                      "LIC min", "LIC max", "MIC min", "MIC max", "HIC min", "HIC max")
+
+set.seed(42069)
+
+for(i in 1:number_runs){
+  #load dataset
+  inputsPSA <- inputs_LIC
+  
+  for(j in c(3,5:12,15,17,19:20, 27:38, 42:60)){
+    inputsPSA[j,6] <- runif(1,as.numeric(inputsPSA[j,13]),as.numeric(inputsPSA[j,14])) 
+  }
+  
+  inputsPSA[21,10] <- runif(1,as.numeric(inputsPSA[21,14]),as.numeric(inputsPSA[21,13]))
+  
+  #store result in vector
+  LIC_MC_Vector[i] <- as.data.frame(Model(inputsPSA))[1,1]
+}
+
+min_LIC <- min(LIC_MC_Vector)
+max_LIC <- max(LIC_MC_Vector)
+avg_LIC <- mean(LIC_MC_Vector)
+
+jpeg("C:/Users/tresc/Desktop/Outputs/Figure 2 A.jpg")
+
+hist(LIC_MC_Vector,
+     xlab = "Maximum Annual Cost",
+     ylab = "Cumulative Density",
+     main = "Distribution of Values from Montecarlo Simulation - LIC")
+
+dev.off()
+
+write.xlsx(LIC_MC_Vector, "C:/Users/tresc/Desktop/Outputs/MC Results LIC.xlsx")
+
+##MIC
+
+scenario_income <- "MIC-S"
+
+MIC_MC_Vector <- rep(0, number_runs)
+
+inputs_MIC <- read.csv(here("inputs - general model.csv"))
+inputs_MIC <- as.data.table(inputs_MIC)
+colnames(inputs_MIC) <- c("parameter", "description", "HIC", "MIC-I", "MIC-S", "LIC", "Value", "Min", "Lo", "Med", "Hi", "Max", 
+                          "LIC min", "LIC max", "MIC min", "MIC max", "HIC min", "HIC max")
+
+set.seed(42069)
+
+for(i in 1:number_runs){
+  #load dataset
+  inputsPSA <- inputs_MIC
+  
+  for(j in c(3,5:12,15,17,19:20, 27:38, 42:60)){
+    inputsPSA[j,5] <- runif(1,as.numeric(inputsPSA[j,15]),as.numeric(inputsPSA[j,16])) 
+  }
+  
+  inputsPSA[21,10] <- runif(1,as.numeric(inputsPSA[21,16]),as.numeric(inputsPSA[21,15]))
+  
+  #store result in vector
+  MIC_MC_Vector[i] <- as.data.frame(Model(inputsPSA))[1,1]
+}
+
+min_MIC <- min(MIC_MC_Vector)
+max_MIC <- max(MIC_MC_Vector)
+avg_MIC <- mean(MIC_MC_Vector)
+
+jpeg("C:/Users/tresc/Desktop/Outputs/Figure 2 B.jpg")
+
+hist(MIC_MC_Vector,
+     xlab = "Maximum Annual Cost",
+     ylab = "Cumulative Density",
+     main = "Distribution of Values from Montecarlo Simulation - MIC")
+
+dev.off()
+
+write.xlsx(MIC_MC_Vector, "C:/Users/tresc/Desktop/Outputs/MC Results MIC.xlsx")
+
+##HIC
+scenario_income <- "HIC"
+
+HIC_MC_Vector <- rep(0, number_runs)
+
+inputs_HIC <- read.csv(here("inputs - general model.csv"))
+inputs_HIC <- as.data.table(inputs_HIC)
+colnames(inputs_HIC) <- c("parameter", "description", "HIC", "MIC-I", "MIC-S", "LIC", "Value", "Min", "Lo", "Med", "Hi", "Max", 
+                          "LIC min", "LIC max", "MIC min", "MIC max", "HIC min", "HIC max")
+
+set.seed(42069)
+
+for(i in 1:number_runs){
+  #load dataset
+  inputsPSA <- inputs_HIC
+  
+  for(j in c(3,5:12,15,17,19:20, 27:38, 42:60)){
+    inputsPSA[j,3] <- runif(1,as.numeric(inputsPSA[j,17]),as.numeric(inputsPSA[j,18])) 
+  }
+  
+  inputsPSA[21,10] <- runif(1,as.numeric(inputsPSA[21,18]),as.numeric(inputsPSA[21,17]))
+  
+  #store result in vector
+  HIC_MC_Vector[i] <- as.data.frame(Model(inputsPSA))[1,1]
+}
+
+min_HIC <- min(HIC_MC_Vector)
+max_HIC <- max(HIC_MC_Vector)
+avg_HIC <- mean(HIC_MC_Vector)
+
+jpeg("C:/Users/tresc/Desktop/Outputs/Figure 2 C.jpg")
+
+hist(HIC_MC_Vector,
+     xlab = "Maximum Annual Cost",
+     ylab = "Cumulative Density",
+     main = "Distribution of Values from Montecarlo Simulation - HIC")
+
+dev.off()
+
+write.xlsx(HIC_MC_Vector, "C:/Users/tresc/Desktop/Outputs/MC Results HIC.xlsx")
+
+
+# Figure 3 - Tornado Plots ------------------------------------------------
+
+#'Human parameters to include in the plots: human AMR effect, discount rate, 
+#'AMR growth, WTP, LFPR, background sickness, background AMR
+
+#'Animal parameters to include: pig income effect, chicken income effect, 
+#'farm size (x4), number of pigs, number of chickens
+
+scenario_prod <- "HCA" 
+scenario_transmission <- "med"
+scenario_farm_effect <- "hi"
+
+##LIC
+
+#get the base case max cost
+scenario_income <- "LIC"
+
+LIC_base <- as.numeric(Model(inputs)[1,1])
+
+#human AMR effect
+inputs_tornado <- inputs
+
+inputs_tornado[21,10] <- inputs_tornado[21,13]
+LIC_human_AMR_low <- as.numeric(Model(inputs_tornado)[1,1])
+
+inputs_tornado[21,10] <- inputs_tornado[21,14]
+LIC_human_AMR_high <- as.numeric(Model(inputs_tornado)[1,1])
+
+#discount rate
+inputs_tornado <- inputs
+
+inputs_tornado[3,6] <- inputs_tornado[3,13]
+LIC_human_dr_low <- as.numeric(Model(inputs_tornado)[1,1])
+
+inputs_tornado[3,6] <- inputs_tornado[3,14]
+LIC_human_dr_high <- as.numeric(Model(inputs_tornado)[1,1])
+
+#AMR growth
+inputs_tornado <- inputs
+
+inputs_tornado[38,6] <- inputs_tornado[38,13]
+LIC_human_amrgro_low <- as.numeric(Model(inputs_tornado)[1,1])
+
+inputs_tornado[38,6] <- inputs_tornado[38,14]
+LIC_human_amrgro_high <- as.numeric(Model(inputs_tornado)[1,1])
+
+#background AMR
+inputs_tornado <- inputs
+
+inputs_tornado[28,6] <- inputs_tornado[28,13]
+LIC_human_amrbase_low <- as.numeric(Model(inputs_tornado)[1,1])
+
+inputs_tornado[28,6] <- inputs_tornado[28,14]
+LIC_human_amrbase_high <- as.numeric(Model(inputs_tornado)[1,1])
+
+#WTP
+inputs_tornado <- inputs
+
+inputs_tornado[6,6] <- inputs_tornado[6,13]
+LIC_human_wtp_low <- as.numeric(Model(inputs_tornado)[1,1])
+
+inputs_tornado[6,6] <- inputs_tornado[6,14]
+LIC_human_wtp_high <- as.numeric(Model(inputs_tornado)[1,1])
+
+#LFPR
+inputs_tornado <- inputs
+
+inputs_tornado[10,6] <- inputs_tornado[10,13]
+LIC_human_lfpr_low <- as.numeric(Model(inputs_tornado)[1,1])
+
+inputs_tornado[10,6] <- inputs_tornado[10,14]
+LIC_human_lfpr_high <- as.numeric(Model(inputs_tornado)[1,1])
+
+#disease incidence
+inputs_tornado <- inputs
+
+inputs_tornado[27,6] <- inputs_tornado[27,13]
+LIC_human_lfpr_low <- as.numeric(Model(inputs_tornado)[1,1])
+
+inputs_tornado[27,6] <- inputs_tornado[27,14]
+LIC_human_lfpr_high <- as.numeric(Model(inputs_tornado)[1,1])
+
+#/#
+
+#pig income effect
+inputs_tornado <- inputs
+
+inputs_tornado[15,6] <- inputs_tornado[15,13]
+LIC_animal_piginc_low <- as.numeric(Model(inputs_tornado)[1,1])
+
+inputs_tornado[15,6] <- inputs_tornado[15,14]
+LIC_animal_piginc_high <- as.numeric(Model(inputs_tornado)[1,1])
+
+#chicken income effect
+inputs_tornado <- inputs
+
+inputs_tornado[17,6] <- inputs_tornado[17,13]
+LIC_animal_chickinc_low <- as.numeric(Model(inputs_tornado)[1,1])
+
+inputs_tornado[17,6] <- inputs_tornado[17,14]
+LIC_animal_chickinc_high <- as.numeric(Model(inputs_tornado)[1,1])
+
+#farm size (pig - I)
+inputs_tornado <- inputs
+
+inputs_tornado[46,6] <- inputs_tornado[46,13]
+LIC_animal_pigfarmi_low <- as.numeric(Model(inputs_tornado)[1,1])
+
+inputs_tornado[46,6] <- inputs_tornado[46,14]
+LIC_animal_pigfarmi_high <- as.numeric(Model(inputs_tornado)[1,1])
+
+#farm size (pig - S)
+inputs_tornado <- inputs
+
+inputs_tornado[47,6] <- inputs_tornado[47,13]
+LIC_animal_pigfarms_low <- as.numeric(Model(inputs_tornado)[1,1])
+
+inputs_tornado[47,6] <- inputs_tornado[47,14]
+LIC_animal_pigfarms_high <- as.numeric(Model(inputs_tornado)[1,1])
+
+#farm size (chicken - I)
+inputs_tornado <- inputs
+
+inputs_tornado[44,6] <- inputs_tornado[44,13]
+LIC_animal_chickfarmi_low <- as.numeric(Model(inputs_tornado)[1,1])
+
+inputs_tornado[44,6] <- inputs_tornado[44,14]
+LIC_animal_chickfarmi_high <- as.numeric(Model(inputs_tornado)[1,1])
+
+#farm size (chicken - S)
+inputs_tornado <- inputs
+
+inputs_tornado[45,6] <- inputs_tornado[45,13]
+LIC_animal_chickfarms_low <- as.numeric(Model(inputs_tornado)[1,1])
+
+inputs_tornado[45,6] <- inputs_tornado[45,14]
+LIC_animal_chickfarms_high <- as.numeric(Model(inputs_tornado)[1,1])
+
+#number of pigs
+inputs_tornado <- inputs
+
+inputs_tornado[42,6] <- inputs_tornado[42,13]
+LIC_animal_npigs_low <- as.numeric(Model(inputs_tornado)[1,1])
+
+inputs_tornado[42,6] <- inputs_tornado[42,14]
+LIC_animal_npigs_high <- as.numeric(Model(inputs_tornado)[1,1])
+
+#number of chickens
+inputs_tornado <- inputs
+
+inputs_tornado[43,6] <- inputs_tornado[43,13]
+LIC_animal_npigs_low <- as.numeric(Model(inputs_tornado)[1,1])
+
+inputs_tornado[43,6] <- inputs_tornado[43,14]
+LIC_animal_npigs_high <- as.numeric(Model(inputs_tornado)[1,1])
+
+##MIC-I
+
+#get the base case max cost
+scenario_income <- "MIC-I"
+
+MICI_base <- as.numeric(Model(inputs)[1,1])
+
+#human AMR effect
+inputs_tornado <- inputs
+
+inputs_tornado[21,10] <- inputs_tornado[21,15]
+MICI_human_AMR_low <- as.numeric(Model(inputs_tornado)[1,1])
+
+inputs_tornado[21,10] <- inputs_tornado[21,16]
+MICI_human_AMR_high <- as.numeric(Model(inputs_tornado)[1,1])
+
+#discount rate
+inputs_tornado <- inputs
+
+inputs_tornado[3,4] <- inputs_tornado[3,15]
+MICI_human_dr_low <- as.numeric(Model(inputs_tornado)[1,1])
+
+inputs_tornado[3,4] <- inputs_tornado[3,16]
+MICI_human_dr_high <- as.numeric(Model(inputs_tornado)[1,1])
+
+#AMR growth
+inputs_tornado <- inputs
+
+inputs_tornado[38,4] <- inputs_tornado[38,15]
+MICI_human_amrgro_low <- as.numeric(Model(inputs_tornado)[1,1])
+
+inputs_tornado[38,4] <- inputs_tornado[38,16]
+MICI_human_amrgro_high <- as.numeric(Model(inputs_tornado)[1,1])
+
+#background AMR
+inputs_tornado <- inputs
+
+inputs_tornado[28,4] <- inputs_tornado[28,15]
+MICI_human_amrbase_low <- as.numeric(Model(inputs_tornado)[1,1])
+
+inputs_tornado[28,4] <- inputs_tornado[28,16]
+MICI_human_amrbase_high <- as.numeric(Model(inputs_tornado)[1,1])
+
+#WTP
+inputs_tornado <- inputs
+
+inputs_tornado[6,4] <- inputs_tornado[6,15]
+MICI_human_wtp_low <- as.numeric(Model(inputs_tornado)[1,1])
+
+inputs_tornado[6,4] <- inputs_tornado[6,16]
+MICI_human_wtp_high <- as.numeric(Model(inputs_tornado)[1,1])
+
+#LFPR
+inputs_tornado <- inputs
+
+inputs_tornado[10,4] <- inputs_tornado[10,15]
+MICI_human_lfpr_low <- as.numeric(Model(inputs_tornado)[1,1])
+
+inputs_tornado[10,4] <- inputs_tornado[10,16]
+MICI_human_lfpr_high <- as.numeric(Model(inputs_tornado)[1,1])
+
+#disease incidence
+inputs_tornado <- inputs
+
+inputs_tornado[27,4] <- inputs_tornado[27,15]
+MICI_human_lfpr_low <- as.numeric(Model(inputs_tornado)[1,1])
+
+inputs_tornado[27,4] <- inputs_tornado[27,16]
+MICI_human_lfpr_high <- as.numeric(Model(inputs_tornado)[1,1])
+
+#/#
+
+#pig income effect
+inputs_tornado <- inputs
+
+inputs_tornado[15,4] <- inputs_tornado[15,15]
+MICI_animal_piginc_low <- as.numeric(Model(inputs_tornado)[1,1])
+
+inputs_tornado[15,4] <- inputs_tornado[15,16]
+MICI_animal_piginc_high <- as.numeric(Model(inputs_tornado)[1,1])
+
+#chicken income effect
+inputs_tornado <- inputs
+
+inputs_tornado[17,4] <- inputs_tornado[17,15]
+MICI_animal_chickinc_low <- as.numeric(Model(inputs_tornado)[1,1])
+
+inputs_tornado[17,4] <- inputs_tornado[17,16]
+MICI_animal_chickinc_high <- as.numeric(Model(inputs_tornado)[1,1])
+
+#farm size (pig - I)
+inputs_tornado <- inputs
+
+inputs_tornado[46,4] <- inputs_tornado[46,15]
+MICI_animal_pigfarmi_low <- as.numeric(Model(inputs_tornado)[1,1])
+
+inputs_tornado[46,4] <- inputs_tornado[46,16]
+MICI_animal_pigfarmi_high <- as.numeric(Model(inputs_tornado)[1,1])
+
+#farm size (pig - S)
+inputs_tornado <- inputs
+
+inputs_tornado[47,4] <- inputs_tornado[47,15]
+MICI_animal_pigfarms_low <- as.numeric(Model(inputs_tornado)[1,1])
+
+inputs_tornado[47,4] <- inputs_tornado[47,16]
+MICI_animal_pigfarms_high <- as.numeric(Model(inputs_tornado)[1,1])
+
+#farm size (chicken - I)
+inputs_tornado <- inputs
+
+inputs_tornado[44,4] <- inputs_tornado[44,15]
+MICI_animal_chickfarmi_low <- as.numeric(Model(inputs_tornado)[1,1])
+
+inputs_tornado[44,4] <- inputs_tornado[44,16]
+MICI_animal_chickfarmi_high <- as.numeric(Model(inputs_tornado)[1,1])
+
+#farm size (chicken - S)
+inputs_tornado <- inputs
+
+inputs_tornado[45,4] <- inputs_tornado[45,15]
+MICI_animal_chickfarms_low <- as.numeric(Model(inputs_tornado)[1,1])
+
+inputs_tornado[45,4] <- inputs_tornado[45,16]
+MICI_animal_chickfarms_high <- as.numeric(Model(inputs_tornado)[1,1])
+
+#number of pigs
+inputs_tornado <- inputs
+
+inputs_tornado[42,4] <- inputs_tornado[42,15]
+MICI_animal_npigs_low <- as.numeric(Model(inputs_tornado)[1,1])
+
+inputs_tornado[42,4] <- inputs_tornado[42,15]
+MICI_animal_npigs_high <- as.numeric(Model(inputs_tornado)[1,1])
+
+#number of chickens
+inputs_tornado <- inputs
+
+inputs_tornado[43,4] <- inputs_tornado[43,15]
+MICI_animal_npigs_low <- as.numeric(Model(inputs_tornado)[1,1])
+
+inputs_tornado[43,4] <- inputs_tornado[43,16]
+MICI_animal_npigs_high <- as.numeric(Model(inputs_tornado)[1,1])
+
+##MIC-S
+
+#get the base case max cost
+scenario_income <- "MIC-S"
+
+MICS_base <- as.numeric(Model(inputs)[1,1])
+
+#human AMR effect
+inputs_tornado <- inputs
+
+inputs_tornado[21,10] <- inputs_tornado[21,15]
+LIC_human_AMR_low <- as.numeric(Model(inputs_tornado)[1,1])
+
+inputs_tornado[21,10] <- inputs_tornado[21,16]
+LIC_human_AMR_high <- as.numeric(Model(inputs_tornado)[1,1])
+
+#discount rate
+inputs_tornado <- inputs
+
+inputs_tornado[3,5] <- inputs_tornado[3,15]
+MICS_human_dr_low <- as.numeric(Model(inputs_tornado)[1,1])
+
+inputs_tornado[3,5] <- inputs_tornado[3,16]
+MICS_human_dr_high <- as.numeric(Model(inputs_tornado)[1,1])
+
+#AMR growth
+inputs_tornado <- inputs
+
+inputs_tornado[38,5] <- inputs_tornado[38,15]
+MICS_human_amrgro_low <- as.numeric(Model(inputs_tornado)[1,1])
+
+inputs_tornado[38,5] <- inputs_tornado[38,16]
+MICS_human_amrgro_high <- as.numeric(Model(inputs_tornado)[1,1])
+
+#background AMR
+inputs_tornado <- inputs
+
+inputs_tornado[28,5] <- inputs_tornado[28,15]
+MICS_human_amrbase_low <- as.numeric(Model(inputs_tornado)[1,1])
+
+inputs_tornado[28,5] <- inputs_tornado[28,16]
+MICS_human_amrbase_high <- as.numeric(Model(inputs_tornado)[1,1])
+
+#WTP
+inputs_tornado <- inputs
+
+inputs_tornado[6,5] <- inputs_tornado[6,15]
+MICS_human_wtp_low <- as.numeric(Model(inputs_tornado)[1,1])
+
+inputs_tornado[6,5] <- inputs_tornado[6,16]
+MICS_human_wtp_high <- as.numeric(Model(inputs_tornado)[1,1])
+
+#LFPR
+inputs_tornado <- inputs
+
+inputs_tornado[10,5] <- inputs_tornado[10,15]
+MICS_human_lfpr_low <- as.numeric(Model(inputs_tornado)[1,1])
+
+inputs_tornado[10,5] <- inputs_tornado[10,16]
+MICS_human_lfpr_high <- as.numeric(Model(inputs_tornado)[1,1])
+
+#disease incidence
+inputs_tornado <- inputs
+
+inputs_tornado[27,5] <- inputs_tornado[27,15]
+MICS_human_lfpr_low <- as.numeric(Model(inputs_tornado)[1,1])
+
+inputs_tornado[27,5] <- inputs_tornado[27,16]
+MICS_human_lfpr_high <- as.numeric(Model(inputs_tornado)[1,1])
+
+#/#
+
+#pig income effect
+inputs_tornado <- inputs
+
+inputs_tornado[15,5] <- inputs_tornado[15,15]
+MICS_animal_piginc_low <- as.numeric(Model(inputs_tornado)[1,1])
+
+inputs_tornado[15,5] <- inputs_tornado[15,16]
+MICS_animal_piginc_high <- as.numeric(Model(inputs_tornado)[1,1])
+
+#chicken income effect
+inputs_tornado <- inputs
+
+inputs_tornado[17,5] <- inputs_tornado[17,15]
+MICS_animal_chickinc_low <- as.numeric(Model(inputs_tornado)[1,1])
+
+inputs_tornado[17,5] <- inputs_tornado[17,16]
+MICS_animal_chickinc_high <- as.numeric(Model(inputs_tornado)[1,1])
+
+#farm size (pig - I)
+inputs_tornado <- inputs
+
+inputs_tornado[46,5] <- inputs_tornado[46,15]
+MICS_animal_pigfarmi_low <- as.numeric(Model(inputs_tornado)[1,1])
+
+inputs_tornado[46,5] <- inputs_tornado[46,16]
+MICS_animal_pigfarmi_high <- as.numeric(Model(inputs_tornado)[1,1])
+
+#farm size (pig - S)
+inputs_tornado <- inputs
+
+inputs_tornado[47,5] <- inputs_tornado[47,15]
+MICS_animal_pigfarms_low <- as.numeric(Model(inputs_tornado)[1,1])
+
+inputs_tornado[47,5] <- inputs_tornado[47,16]
+MICS_animal_pigfarms_high <- as.numeric(Model(inputs_tornado)[1,1])
+
+#farm size (chicken - I)
+inputs_tornado <- inputs
+
+inputs_tornado[44,5] <- inputs_tornado[44,15]
+MICS_animal_chickfarmi_low <- as.numeric(Model(inputs_tornado)[1,1])
+
+inputs_tornado[44,5] <- inputs_tornado[44,16]
+MICS_animal_chickfarmi_high <- as.numeric(Model(inputs_tornado)[1,1])
+
+#farm size (chicken - S)
+inputs_tornado <- inputs
+
+inputs_tornado[45,5] <- inputs_tornado[45,15]
+MICS_animal_chickfarms_low <- as.numeric(Model(inputs_tornado)[1,1])
+
+inputs_tornado[45,5] <- inputs_tornado[45,16]
+MICS_animal_chickfarms_high <- as.numeric(Model(inputs_tornado)[1,1])
+
+#number of pigs
+inputs_tornado <- inputs
+
+inputs_tornado[42,5] <- inputs_tornado[42,15]
+MICS_animal_npigs_low <- as.numeric(Model(inputs_tornado)[1,1])
+
+inputs_tornado[42,5] <- inputs_tornado[42,15]
+MICS_animal_npigs_high <- as.numeric(Model(inputs_tornado)[1,1])
+
+#number of chickens
+inputs_tornado <- inputs
+
+inputs_tornado[43,5] <- inputs_tornado[43,15]
+MICS_animal_npigs_low <- as.numeric(Model(inputs_tornado)[1,1])
+
+inputs_tornado[43,5] <- inputs_tornado[43,16]
+MICS_animal_npigs_high <- as.numeric(Model(inputs_tornado)[1,1])
+
+##HIC
+
+#get the base case max cost
+scenario_income <- "HIC"
+
+HIC_base <- as.numeric(Model(inputs)[1,1])
+
+#human AMR effect
+inputs_tornado <- inputs
+
+inputs_tornado[21,10] <- inputs_tornado[21,17]
+HIC_human_AMR_low <- as.numeric(Model(inputs_tornado)[1,1])
+
+inputs_tornado[21,10] <- inputs_tornado[21,18]
+HIC_human_AMR_high <- as.numeric(Model(inputs_tornado)[1,1])
+
+#discount rate
+inputs_tornado <- inputs
+
+inputs_tornado[3,3] <- inputs_tornado[3,17]
+HIC_human_dr_low <- as.numeric(Model(inputs_tornado)[1,1])
+
+inputs_tornado[3,3] <- inputs_tornado[3,18]
+HIC_human_dr_high <- as.numeric(Model(inputs_tornado)[1,1])
+
+#AMR growth
+inputs_tornado <- inputs
+
+inputs_tornado[38,3] <- inputs_tornado[38,17]
+HIC_human_amrgro_low <- as.numeric(Model(inputs_tornado)[1,1])
+
+inputs_tornado[38,3] <- inputs_tornado[38,18]
+HIC_human_amrgro_high <- as.numeric(Model(inputs_tornado)[1,1])
+
+#background AMR
+inputs_tornado <- inputs
+
+inputs_tornado[28,3] <- inputs_tornado[28,17]
+HIC_human_amrbase_low <- as.numeric(Model(inputs_tornado)[1,1])
+
+inputs_tornado[28,3] <- inputs_tornado[28,18]
+HIC_human_amrbase_high <- as.numeric(Model(inputs_tornado)[1,1])
+
+#WTP
+inputs_tornado <- inputs
+
+inputs_tornado[6,3] <- inputs_tornado[6,17]
+HIC_human_wtp_low <- as.numeric(Model(inputs_tornado)[1,1])
+
+inputs_tornado[6,3] <- inputs_tornado[6,18]
+HIC_human_wtp_high <- as.numeric(Model(inputs_tornado)[1,1])
+
+#LFPR
+inputs_tornado <- inputs
+
+inputs_tornado[10,3] <- inputs_tornado[10,17]
+HIC_human_lfpr_low <- as.numeric(Model(inputs_tornado)[1,1])
+
+inputs_tornado[10,3] <- inputs_tornado[10,18]
+HIC_human_lfpr_high <- as.numeric(Model(inputs_tornado)[1,1])
+
+#disease incidence
+inputs_tornado <- inputs
+
+inputs_tornado[27,3] <- inputs_tornado[27,17]
+HIC_human_lfpr_low <- as.numeric(Model(inputs_tornado)[1,1])
+
+inputs_tornado[27,3] <- inputs_tornado[27,18]
+HIC_human_lfpr_high <- as.numeric(Model(inputs_tornado)[1,1])
+
+#/#
+
+#pig income effect
+inputs_tornado <- inputs
+
+inputs_tornado[15,3] <- inputs_tornado[15,17]
+HIC_animal_piginc_low <- as.numeric(Model(inputs_tornado)[1,1])
+
+inputs_tornado[15,3] <- inputs_tornado[15,18]
+HIC_animal_piginc_high <- as.numeric(Model(inputs_tornado)[1,1])
+
+#chicken income effect
+inputs_tornado <- inputs
+
+inputs_tornado[17,3] <- inputs_tornado[17,17]
+HIC_animal_chickinc_low <- as.numeric(Model(inputs_tornado)[1,1])
+
+inputs_tornado[17,3] <- inputs_tornado[17,18]
+HIC_animal_chickinc_high <- as.numeric(Model(inputs_tornado)[1,1])
+
+#farm size (pig - I)
+inputs_tornado <- inputs
+
+inputs_tornado[46,3] <- inputs_tornado[46,17]
+HIC_animal_pigfarmi_low <- as.numeric(Model(inputs_tornado)[1,1])
+
+inputs_tornado[46,3] <- inputs_tornado[46,18]
+HIC_animal_pigfarmi_high <- as.numeric(Model(inputs_tornado)[1,1])
+
+#farm size (pig - S)
+inputs_tornado <- inputs
+
+inputs_tornado[47,3] <- inputs_tornado[47,17]
+HIC_animal_pigfarms_low <- as.numeric(Model(inputs_tornado)[1,1])
+
+inputs_tornado[47,3] <- inputs_tornado[47,18]
+HIC_animal_pigfarms_high <- as.numeric(Model(inputs_tornado)[1,1])
+
+#farm size (chicken - I)
+inputs_tornado <- inputs
+
+inputs_tornado[44,3] <- inputs_tornado[44,17]
+HIC_animal_chickfarmi_low <- as.numeric(Model(inputs_tornado)[1,1])
+
+inputs_tornado[44,3] <- inputs_tornado[44,18]
+HIC_animal_chickfarmi_high <- as.numeric(Model(inputs_tornado)[1,1])
+
+#farm size (chicken - S)
+inputs_tornado <- inputs
+
+inputs_tornado[45,3] <- inputs_tornado[45,17]
+HIC_animal_chickfarms_low <- as.numeric(Model(inputs_tornado)[1,1])
+
+inputs_tornado[45,3] <- inputs_tornado[45,18]
+HIC_animal_chickfarms_high <- as.numeric(Model(inputs_tornado)[1,1])
+
+#number of pigs
+inputs_tornado <- inputs
+
+inputs_tornado[42,3] <- inputs_tornado[42,17]
+HIC_animal_npigs_low <- as.numeric(Model(inputs_tornado)[1,1])
+
+inputs_tornado[42,3] <- inputs_tornado[42,18]
+HIC_animal_npigs_high <- as.numeric(Model(inputs_tornado)[1,1])
+
+#number of chickens
+inputs_tornado <- inputs
+
+inputs_tornado[43,3] <- inputs_tornado[43,17]
+HIC_animal_npigs_low <- as.numeric(Model(inputs_tornado)[1,1])
+
+inputs_tornado[43,3] <- inputs_tornado[43,18]
+HIC_animal_npigs_high <- as.numeric(Model(inputs_tornado)[1,1])
+
+# Table 2 - Expected Value of Perfect Information -----------------------------------
+
+#'Human parameters to include in the plots: human AMR effect, discount rate, 
+#'AMR growth, WTP, LFPR, background sickness, background AMR
+
+#'Animal parameters to include: pig income effect, chicken income effect, 
+#'farm size (x4), number of pigs, number of chickens
+
+v
+
+# Table 3 - Cost Borne by Each Sector -------------------------------------
+
+scenario_prod      <- "HCA"  
+scenario_farm_effect <- "hi"
+scenario_transmission <- "med"
+
+table_3 <- matrix(rep(0), nrow = 4, ncol = 9)
+colnames(table_3) <- c("Income Group", 
+                 "Maximum Acceptable Cost (Annual)",
+                 "Value of Productivity Gained",
+                 "Cost Saved for Healthcare",
+                 "Value of DALYs Averted",
+                 "Increased Profit - Smallholder Pig Farms",
+                 "Increased Profit - Industrial Pig Farms",
+                 "Increased Profit - Smallholder Chicken Farms",
+                 "Increased Profit - Industrial Chicken Farms")
+
+table_3[1,1] <- "LIC"
+table_3[2,1] <- "MIC (Smallholder)"
+table_3[3,1] <- "MIC (Industrial)"
+table_3[4,1] <- "HIC"
+
+scenario_income <- "LIC"
+table_3[1,2:9] <- as.numeric(Model(inputs))
+
+scenario_income <- "MIC-S"
+table_3[2,2:9] <- as.numeric(Model(inputs))
+
+scenario_income <- "MIC-I"
+table_3[3,2:9] <- as.numeric(Model(inputs))
+
+scenario_income <- "HIC"
+table_3[4,2:9] <- as.numeric(Model(inputs))
+
+write.xlsx(table_3, "C:/Users/tresc/Desktop/Outputs/Table 3.xlsx")
 
 
   
