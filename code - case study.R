@@ -1077,7 +1077,7 @@ table_4[3,2] <- as.numeric(model(inputs)[1,1])
 scenario_transmission <- "max"
 table_4[4,2] <- as.numeric(model(inputs)[1,1])
 
-write.xlsx(table_4, "C:/Users/tresc/Desktop/Outputs/Table 4.xlsx")
+write.xlsx(table_4, "Outputs/Table 4.xlsx")
 
 # Figure 4 ----------------------------------------------------------------
 
@@ -1104,7 +1104,7 @@ names <- c("Healthcare (incl. QALYs saved", "Productivity", "Poultry Sector",
 
 fig4_matrix <- as.data.frame(cbind(names, counts))
 
-jpeg("C:/Users/tresc/Desktop/Outputs/Figure 4.jpg")
+jpeg("Outputs/Figure 4.jpg")
 
 fig4_matrix %>%
   mutate(names = fct_reorder(names, counts)) %>%

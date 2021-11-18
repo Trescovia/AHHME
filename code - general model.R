@@ -34,10 +34,6 @@ scenario_farm_effect <- "med" #must be "min", "lo", "med", "hi" or "max"
 
 number_runs <- 1000
 
-max_res <- 0.9
-#the maximum portion of infections that can be from resistant bacteria
-
-
 # inputs ------------------------------------------------------------------
 
 inputs <- read.csv(here("inputs - general model.csv"))
@@ -48,8 +44,9 @@ colnames(inputs) <- c("parameter", "description", "HIC", "MIC-I", "MIC-S", "LIC"
 ## 
 # Main Model --------------------------------------------------------
 
-Model <- function(inputs){
-  
+Model <- function(inputs, scenario_income, scenario_prod, scenario_transmission,
+                  scenario_farm_effect){
+
   if(scenario_income == "HIC"){
     inputs[,"Value"] <- inputs[,"HIC"]
   } else if(scenario_income == "LIC"){
@@ -146,8 +143,13 @@ Model <- function(inputs){
   m_param[1, 1:length(state_names)] <- state_i 
   #adding initial cycle 0 values
   
-  #have growing AMR prevalence, but stable overall disease incidence
+  #have growing AMR prevalence
+  #note that we will later ensure that the total disease incidence does not change,
+  #only the portion of infections from resistant bacteria
   amr_growth <- inputs[parameter=="amr_grow", Value]
+  
+  #set the maximum portion of resistant infections
+  max_res <- inputs[parameter == "max_r", Value]
   
   for (i in 2:(n.t)){
     m_param[i, "r"] <- m_param[i-1, "r"]*amr_growth
@@ -207,7 +209,9 @@ Model <- function(inputs){
   
   f_human_epi <- function(m_param, n.t){
     
-    for(i in 2:n.t){
+    n.t.val <- n.t
+    
+    for(i in 2:n.t.val){
       
       #carry over from last period and be born
       m_param[i, "well"] <- m_param[i-1, "well"] + m_param[i, "birth"]
@@ -416,7 +420,9 @@ Model <- function(inputs){
   transition_names_a  <- c("birth","r","s","mort_r", "mort_s","mort_w", "rec_r","rec_s","w_sold")  ## the rates
   parameter_names_a <- c(state_names_a, transition_names_a)
   
-  f_animal_epi <- function(m_param_a_base, n.t){
+  f_animal_epi <- function(m_param_a_base, n.t, scenario_animal){
+    
+    n.t.val <- n.t
     
     if(scenario_animal == "chicken_small"){
       n_animals_farm <- inputs[parameter == "n_chickens_farm_small", Value]
@@ -460,8 +466,8 @@ Model <- function(inputs){
     
     m_a_sum[1:5] <- annual_cycles * m_a_sum[1:5] #multiply by the number of annual cycles
     
-    m_param_a <- matrix(rep(m_a_sum), nrow=n.t, ncol =length(parameter_names_a))
-    m_param_a <- t(replicate(n.t,m_a_sum))
+    m_param_a <- matrix(rep(m_a_sum), nrow=n.t.val, ncol =length(parameter_names_a))
+    m_param_a <- t(replicate(n.t.val,m_a_sum))
     colnames(m_param_a) <- parameter_names_a
     rownames(m_param_a) <- paste("cycle", 0:(n.t-1), sep  =  "")
     
@@ -506,7 +512,7 @@ Model <- function(inputs){
   
   m_param_c_s_base[1, 1:length(state_names_a)] <- state_i_c_s
   
-  m_param_c_s <- f_animal_epi(m_param_c_s_base,n.t)
+  m_param_c_s <- f_animal_epi(m_param_c_s_base,n.t, scenario_animal)
   ### ignore totals of transition probs etc. as they are over counted etc.
   ## just want to focus on health state totals
   
@@ -546,7 +552,7 @@ Model <- function(inputs){
   
   m_param_c_i_base[1, 1:length(state_names_a)] <- state_i_c_i
   
-  m_param_c_i <- f_animal_epi(m_param_c_i_base,n.t)
+  m_param_c_i <- f_animal_epi(m_param_c_i_base,n.t, scenario_animal)
   ### ignore totals of transition probs etc. as they are over counted etc.
   ## just want to focus on health state totals
   
@@ -586,7 +592,7 @@ Model <- function(inputs){
   
   m_param_p_s_base[1, 1:length(state_names_a)] <- state_i_p_s
   
-  m_param_p_s <- f_animal_epi(m_param_p_s_base,n.t)
+  m_param_p_s <- f_animal_epi(m_param_p_s_base,n.t, scenario_animal)
   ### ignore totals of transition probs etc. as they are over counted etc.
   ## just want to focus on health state totals
   
@@ -626,7 +632,7 @@ Model <- function(inputs){
   
   m_param_p_i_base[1, 1:length(state_names_a)] <- state_i_p_i
   
-  m_param_p_i <- f_animal_epi(m_param_p_i_base,n.t)
+  m_param_p_i <- f_animal_epi(m_param_p_i_base,n.t, scenario_animal)
   ### ignore totals of transition probs etc. as they are over counted etc.
   ## just want to focus on health state totals  
   
@@ -819,7 +825,7 @@ Model <- function(inputs){
   
   #apply the animal epi function
   scenario_animal <- "chicken_ind"
-  m_param_c_i2 <- f_animal_epi(m_param_c_i2, n.t)
+  m_param_c_i2 <- f_animal_epi(m_param_c_i2, n.t, scenario_animal)
   
   #rewards
   m_rwd_c_i2 <- matrix(rep(0), nrow=n.t, ncol =length(parameter_names_a))
@@ -867,7 +873,7 @@ Model <- function(inputs){
   
   #apply the animal epi function
   scenario_animal <- "chicken_small"
-  m_param_c_s2 <- f_animal_epi(m_param_c_s2, n.t)
+  m_param_c_s2 <- f_animal_epi(m_param_c_s2, n.t, scenario_animal)
   
   #rewards
   m_rwd_c_s2 <- matrix(rep(0), nrow=n.t, ncol =length(parameter_names_a))
@@ -915,7 +921,7 @@ Model <- function(inputs){
   
   #apply the animal epi function
   scenario_animal <- "pig_ind"
-  m_param_p_i2 <- f_animal_epi(m_param_p_i2, n.t)  
+  m_param_p_i2 <- f_animal_epi(m_param_p_i2, n.t, scenario_animal)  
   
   #rewards
   m_rwd_p_i2 <- matrix(rep(0), nrow=n.t, ncol =length(parameter_names_a))
@@ -963,7 +969,7 @@ Model <- function(inputs){
   
   #apply the animal epi function
   scenario_animal <- "pig_small"
-  m_param_p_s2 <- f_animal_epi(m_param_p_s2, n.t)
+  m_param_p_s2 <- f_animal_epi(m_param_p_s2, n.t, scenario_animal)
   
   #rewards
   m_rwd_p_s2 <- matrix(rep(0), nrow=n.t, ncol =length(parameter_names_a))
@@ -1133,10 +1139,10 @@ Model <- function(inputs){
   outputs
   
   return(outputs)
-  
+
 }
 
-Model(inputs)
+Model(inputs, scenario_income, scenario_prod, scenario_transmission, scenario_farm_effect)
 
 # Figures and Tables -------------------------------------------------------
   
@@ -1380,10 +1386,10 @@ scenario_analysis_HIC[4,4] <- as.numeric(Model(inputs)[1,1])
 scenario_farm_effect       <- "max"
 scenario_analysis_HIC[4,5] <- as.numeric(Model(inputs)[1,1])
   
-write.xlsx(scenario_analysis_LIC, "C:/Users/tresc/Desktop/Outputs/Table 1 A.xlsx")
-write.xlsx(scenario_analysis_MIC_I, "C:/Users/tresc/Desktop/Outputs/Table 1 B.xlsx")
-write.xlsx(scenario_analysis_MIC_S, "C:/Users/tresc/Desktop/Outputs/Table 1 C.xlsx")
-write.xlsx(scenario_analysis_HIC, "C:/Users/tresc/Desktop/Outputs/Table 1 D.xlsx")
+write.xlsx(scenario_analysis_LIC, "Outputs/Table 1 A.xlsx")
+write.xlsx(scenario_analysis_MIC_I, "Outputs/Table 1 B.xlsx")
+write.xlsx(scenario_analysis_MIC_S, "Outputs/Table 1 C.xlsx")
+write.xlsx(scenario_analysis_HIC, "Outputs/Table 1 D.xlsx")
 
 
 # Figure 2 - Distribution of Results from Montecarlo Simulation -----------
@@ -1422,7 +1428,7 @@ min_LIC <- min(LIC_MC_Vector)
 max_LIC <- max(LIC_MC_Vector)
 avg_LIC <- median(LIC_MC_Vector)
 
-jpeg("C:/Users/tresc/Desktop/Outputs/Figure 2 A.jpg")
+jpeg("Outputs/Figure 2 A.jpg")
 
 hist(LIC_MC_Vector,
      xlab = "Maximum Annual Cost",
@@ -1431,7 +1437,7 @@ hist(LIC_MC_Vector,
 
 dev.off()
 
-write.xlsx(LIC_MC_Vector, "C:/Users/tresc/Desktop/Outputs/MC Results LIC.xlsx")
+write.xlsx(LIC_MC_Vector, "Outputs/MC Results LIC.xlsx")
 
 ##MIC
 
@@ -1464,7 +1470,7 @@ min_MIC <- min(MIC_MC_Vector)
 max_MIC <- max(MIC_MC_Vector)
 avg_MIC <- median(MIC_MC_Vector)
 
-jpeg("C:/Users/tresc/Desktop/Outputs/Figure 2 B.jpg")
+jpeg("Outputs/Figure 2 B.jpg")
 
 hist(MIC_MC_Vector,
      xlab = "Maximum Annual Cost",
@@ -1473,7 +1479,7 @@ hist(MIC_MC_Vector,
 
 dev.off()
 
-write.xlsx(MIC_MC_Vector, "C:/Users/tresc/Desktop/Outputs/MC Results MIC.xlsx")
+write.xlsx(MIC_MC_Vector, "Outputs/MC Results MIC.xlsx")
 
 ##HIC
 scenario_income <- "HIC"
@@ -1505,7 +1511,7 @@ min_HIC <- min(HIC_MC_Vector)
 max_HIC <- max(HIC_MC_Vector)
 avg_HIC <- median(HIC_MC_Vector)
 
-jpeg("C:/Users/tresc/Desktop/Outputs/Figure 2 C.jpg")
+jpeg("Outputs/Figure 2 C.jpg")
 
 hist(HIC_MC_Vector,
      xlab = "Maximum Annual Cost",
@@ -1514,7 +1520,7 @@ hist(HIC_MC_Vector,
 
 dev.off()
 
-write.xlsx(HIC_MC_Vector, "C:/Users/tresc/Desktop/Outputs/MC Results HIC.xlsx")
+write.xlsx(HIC_MC_Vector, "Outputs/MC Results HIC.xlsx")
 
 
 # Figure 3 - Tornado Plots ------------------------------------------------
@@ -2309,7 +2315,7 @@ tornado_HIC_human <- data.frame(variable = c("Effect on Human AMR",
                               HIC_human_lfpr_high,
                               HIC_human_disease_high))
 
-jpeg("C:/Users/tresc/Desktop/Outputs/Figure 3 D 1.jpg")
+jpeg("Outputs/Figure 3 D 1.jpg")
 
 ggplot(tornado_HIC_human, aes(variable, ymin = min, ymax = max)) +
   geom_linerange(size = 10) +
@@ -2349,7 +2355,7 @@ tornado_HIC_animal <- data.frame(variable = c("Effect on Pig Productivity",
                                         HIC_animal_npigs_high,
                                         HIC_animal_nchicks_high))
 
-jpeg("C:/Users/tresc/Desktop/Outputs/Figure 3 D 2.jpg")
+jpeg("Outputs/Figure 3 D 2.jpg")
 
 ggplot(tornado_HIC_animal, aes(variable, ymin = min, ymax = max)) +
   geom_linerange(size = 10) +
@@ -2386,7 +2392,7 @@ tornado_MICI_human <- data.frame(variable = c("Effect on Human AMR",
                                          MICI_human_lfpr_high,
                                          MICI_human_disease_high))
 
-jpeg("C:/Users/tresc/Desktop/Outputs/Figure 3 B 1.jpg")
+jpeg("Outputs/Figure 3 B 1.jpg")
 
 ggplot(tornado_MICI_human, aes(variable, ymin = min, ymax = max)) +
   geom_linerange(size = 10) +
@@ -2426,7 +2432,7 @@ tornado_MICI_animal <- data.frame(variable = c("Effect on Pig Productivity",
                                           MICI_animal_npigs_high,
                                           MICI_animal_nchicks_high))
 
-jpeg("C:/Users/tresc/Desktop/Outputs/Figure 3 B 2.jpg")
+jpeg("Outputs/Figure 3 B 2.jpg")
 
 ggplot(tornado_MICI_animal, aes(variable, ymin = min, ymax = max)) +
   geom_linerange(size = 10) +
@@ -2463,7 +2469,7 @@ tornado_MICS_human <- data.frame(variable = c("Effect on Human AMR",
                                          MICS_human_lfpr_high,
                                          MICS_human_disease_high))
 
-jpeg("C:/Users/tresc/Desktop/Outputs/Figure 3 C 1.jpg")
+jpeg("Outputs/Figure 3 C 1.jpg")
 
 ggplot(tornado_MICS_human, aes(variable, ymin = min, ymax = max)) +
   geom_linerange(size = 10) +
@@ -2503,7 +2509,7 @@ tornado_MICS_animal <- data.frame(variable = c("Effect on Pig Productivity",
                                           MICS_animal_npigs_high,
                                           MICS_animal_nchicks_high))
 
-jpeg("C:/Users/tresc/Desktop/Outputs/Figure 3 C 2.jpg")
+jpeg("Outputs/Figure 3 C 2.jpg")
 
 ggplot(tornado_MICS_animal, aes(variable, ymin = min, ymax = max)) +
   geom_linerange(size = 10) +
@@ -2540,7 +2546,7 @@ tornado_LIC_human <- data.frame(variable = c("Effect on Human AMR",
                                         LIC_human_lfpr_high,
                                         LIC_human_disease_high))
 
-jpeg("C:/Users/tresc/Desktop/Outputs/Figure 3 A 1.jpg")
+jpeg("Outputs/Figure 3 A 1.jpg")
 
 ggplot(tornado_LIC_human, aes(variable, ymin = min, ymax = max)) +
   geom_linerange(size = 10) +
@@ -2580,7 +2586,7 @@ tornado_LIC_animal <- data.frame(variable = c("Effect on Pig Productivity",
                                          LIC_animal_npigs_high,
                                          LIC_animal_nchicks_high))
 
-jpeg("C:/Users/tresc/Desktop/Outputs/Figure 3 A 2.jpg")
+jpeg("Outputs/Figure 3 A 2.jpg")
 
 ggplot(tornado_LIC_animal, aes(variable, ymin = min, ymax = max)) +
   geom_linerange(size = 10) +
@@ -2637,7 +2643,7 @@ for(i in 1:number_runs){
   
 }
 
-write.xlsx(LIC_reg_matrix, "C:/Users/tresc/Desktop/Outputs/reg matrix LIC.xlsx")
+write.xlsx(LIC_reg_matrix, "Outputs/reg matrix LIC.xlsx")
 
 ### MICI
 
@@ -2678,7 +2684,7 @@ for(i in 1:number_runs){
   
 }
 
-write.xlsx(MICI_reg_matrix, "C:/Users/tresc/Desktop/Outputs/reg matrix MICI.xlsx")
+write.xlsx(MICI_reg_matrix, "Outputs/reg matrix MICI.xlsx")
 
 ### MICS
 
@@ -2719,7 +2725,7 @@ for(i in 1:number_runs){
   
 }
 
-write.xlsx(MICS_reg_matrix, "C:/Users/tresc/Desktop/Outputs/reg matrix MICS.xlsx")
+write.xlsx(MICS_reg_matrix, "Outputs/reg matrix MICS.xlsx")
 
 ###HIC
 
@@ -2760,7 +2766,7 @@ for(i in 1:number_runs){
   
 }
 
-write.xlsx(HIC_reg_matrix, "C:/Users/tresc/Desktop/Outputs/reg matrix HIC.xlsx")
+write.xlsx(HIC_reg_matrix, "Outputs/reg matrix HIC.xlsx")
 
 ##regressions 
 
@@ -2804,7 +2810,7 @@ HIC_prsq_val <- HIC_prsq$partial.rsq
 
 HIC_prsq <- as.data.frame(cbind(HIC_prsq_var, HIC_prsq_val))
 
-jpeg("C:/Users/tresc/Desktop/Outputs/Table 2 A.jpg")
+jpeg("Outputs/Table 2 A.jpg")
 
 HIC_prsq %>%
   mutate(HIC_prsq_var = fct_reorder(HIC_prsq_var, HIC_prsq_val)) %>%
@@ -2850,7 +2856,7 @@ MICI_prsq_val <- MICI_prsq$partial.rsq
 
 MICI_prsq <- as.data.frame(cbind(MICI_prsq_var, MICI_prsq_val))
 
-jpeg("C:/Users/tresc/Desktop/Outputs/Table 2 B.jpg")
+jpeg("Outputs/Table 2 B.jpg")
 
 MICI_prsq %>%
   mutate(MICI_prsq_var = fct_reorder(MICI_prsq_var, MICI_prsq_val)) %>%
@@ -2896,7 +2902,7 @@ MICS_prsq_val <- MICS_prsq$partial.rsq
 
 MICS_prsq <- as.data.frame(cbind(MICS_prsq_var, MICS_prsq_val))
 
-jpeg("C:/Users/tresc/Desktop/Outputs/Table 2 C.jpg")
+jpeg("Outputs/Table 2 C.jpg")
 
 MICS_prsq %>%
   mutate(MICS_prsq_var = fct_reorder(MICS_prsq_var, MICS_prsq_val)) %>%
@@ -2941,7 +2947,7 @@ LIC_prsq_val <- LIC_prsq$partial.rsq
 
 LIC_prsq <- as.data.frame(cbind(LIC_prsq_var, LIC_prsq_val))
 
-jpeg("C:/Users/tresc/Desktop/Outputs/Table 2 D.jpg")
+jpeg("Outputs/Table 2 D.jpg")
 
 LIC_prsq %>%
   mutate(LIC_prsq_var = fct_reorder(LIC_prsq_var, LIC_prsq_val)) %>%
@@ -2988,7 +2994,7 @@ table_3[3,2:9] <- as.numeric(Model(inputs))
 scenario_income <- "HIC"
 table_3[4,2:9] <- as.numeric(Model(inputs))
 
-write.xlsx(table_3, "C:/Users/tresc/Desktop/Outputs/Table 3.xlsx")
+write.xlsx(table_3, "Outputs/Table 3.xlsx")
 
 
   
