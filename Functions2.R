@@ -1,4 +1,3 @@
-
 # General Model -----------------------------------------------------------
 
 Model_Case_Study <- function(inputs, scenario_income, scenario_prod, scenario_transmission,

@@ -4,6 +4,8 @@ library(taRifx)
 library(tidyverse)
 library(dplyr)
 library(xlsx)
+library(forecast)
+library(Hmisc)
 
 setwd("C:/Users/tresc/Desktop/AMR-Model/General model/input data")
 
@@ -316,6 +318,93 @@ dictionary <- merge(meatproduction, dictionary, by = "iso3c", all=T)
 dictionary <- dictionary[!is.na(dictionary$iso3c),]
 
 
+# Population growth -------------------------------------------------------
+
+#get
+population <- read.csv("population.csv")
+colnames(population) <- c("country", "country code", "indicator name", "indicator code", "year", "population")
+
+#get iso3c
+population$iso3c <-countrycode(population$country, origin="country.name", destination = "iso3c")
+
+#keep columns
+population <- population[,5:7]
+
+#get income levels
+income_levels <- dictionary[,c(1,21)]
+
+#merge
+population <- merge(population, income_levels, by = "iso3c", all=T)
+
+#drop NAs
+population <- population[complete.cases(population),]
+
+#get total population of each income category over time
+population <- population %>%
+  group_by(Income.group, year) %>%
+  summarize(totalpopulation = sum(population))
+
+#split into a composite time series
+populationLIC <- population[population$Income.group == "Low income",]
+populationMIC <- population[population$Income.group == "Middle income",]
+populationHIC <- population[population$Income.group == "High income",]
+
+for(i in 1:nrow(populationMIC)){
+  populationMIC$totalpopulation[i] <- populationMIC$totalpopulation[i] - populationHIC$totalpopulation[i] - populationLIC$totalpopulation[i]
+}
+
+populationLIC <- ts(populationLIC$totalpopulation, start = 1960, frequency = 1)
+populationMIC <- ts(populationMIC$totalpopulation, start = 1960, frequency = 1)
+populationHIC <- ts(populationHIC$totalpopulation, start = 1960, frequency = 1)
+
+#get predictions
+ARIMALIC <- auto.arima(populationLIC, stepwise = F, approximation = F)
+ARIMAMIC <- auto.arima(populationMIC, stepwise = F, approximation = F)
+ARIMAHIC <- auto.arima(populationHIC, stepwise = F, approximation = F)
+
+LICpoppredict <- forecast(ARIMALIC, 20)
+MICpoppredict <- forecast(ARIMAMIC, 20)
+HICpoppredict <- forecast(ARIMAHIC, 20)
+
+LICmean <- LICpoppredict$mean
+HICmean <- HICpoppredict$mean
+MICmean <- MICpoppredict$mean
+
+LICupper <- LICpoppredict$upper[,2]
+LIClower <- LICpoppredict$lower[,2]
+
+HICupper <- HICpoppredict$upper[,2]
+HIClower <- HICpoppredict$lower[,2]
+
+MICupper <- MICpoppredict$upper[,2]
+MIClower <- MICpoppredict$lower[,2]
+
+#convert to rate
+LICpopgrow <- ((LICmean[20] / populationLIC[61])^0.05) - 1
+LICpopgrowhigh <- ((LICupper[20] / populationLIC[61])^0.05) - 1
+LICpopgrowlow <- ((LIClower[20] / populationLIC[61])^0.05) - 1
+
+MICpopgrow <- ((MICmean[20] / populationMIC[61])^0.05) - 1
+MICpopgrowhigh <- ((MICupper[20] / populationMIC[61])^0.05) - 1
+MICpopgrowlow <- ((MIClower[20] / populationMIC[61])^0.05) - 1
+
+HICpopgrow <- ((HICmean[20] / populationHIC[61])^0.05) - 1
+HICpopgrowhigh <- ((HICupper[20] / populationHIC[61])^0.05) - 1
+HICpopgrowlow <- ((HIClower[20] / populationHIC[61])^0.05) - 1
+
+#get standard deviation
+LICsd1 <- (LICpopgrowhigh - LICpopgrow) / 1.96
+LICsd2 <- (LICpopgrowlow - LICpopgrow) / 1.96
+LICsd <- 0.5*(abs(LICsd1) + abs(LICsd2))
+
+MICsd1 <- (MICpopgrowhigh - MICpopgrow) / 1.96
+MICsd2 <- (MICpopgrowlow - MICpopgrow) / 1.96
+MICsd <- 0.5*(abs(MICsd1) + abs(MICsd2))
+
+HICsd1 <- (HICpopgrowhigh - HICpopgrow) / 1.96
+HICsd2 <- (MICpopgrowlow - MICpopgrow) / 1.96
+HICsd <- 0.5*(abs(HICsd1) + abs(HICsd2))
+
 # save combined dataset ---------------------------------------------------
 
 #combine LMIC and UMIC
@@ -335,19 +424,247 @@ rm("bedday", "chickenprice", "chickenweight", "growth", "meatproduction",
 
 #create dataframe
 vars <- colnames(dictionary)[2:15]
-levels <- c("Low income", "Middle income", "High income")
+levels <- c("High income", "Low income", "Middle income", "World")
 averages <- matrix(rep(0), ncol = length(vars), nrow = length(levels))
 averages <- as.data.frame(averages)
 colnames(averages) <- vars
 rownames(averages) <- levels
 
-for(i in 1:length(vars)){
-  for(j in 1:length(levels)){
-    averages[j,i] <- mean(as.vector(na.omit(dictionary[dictionary$Income.group == levels[j],i+1])))
-  }
-} #works but not population-weighted
+#meatproduction
+dictionarymeatproduction <- dictionary %>%
+  filter( is.na(`meatproduction`) == FALSE) %>%
+  group_by(Income.group) %>%
+  summarize(mean_wtp = weighted.mean(`meatproduction`, `population`))
 
-dictionary2 <- dictionary %>%
+averages[1:3,1] <- dictionarymeatproduction[1:3,2]
+
+rm(dictionarymeatproduction)
+
+meatproductionavg <- dictionary %>%
+  filter( is.na(`meatproduction`) == FALSE & is.na(`population`) == FALSE) %>%
+  summarize(mean_wtp = weighted.mean(`meatproduction`, `population`))
+averages[4,1] <- meatproductionavg
+
+#pigprice
+dictionarypigprice <- dictionary %>%
+  filter( is.na(`pigprice`) == FALSE) %>%
+  group_by(Income.group) %>%
+  summarize(mean_wtp = weighted.mean(`pigprice`, `population`))
+
+averages[1:3,2] <- dictionarypigprice[1:3,2]
+
+rm(dictionarypigprice)
+
+pigpriceavg <- dictionary %>%
+  filter( is.na(`pigprice`) == FALSE & is.na(`population`) == FALSE) %>%
+  summarize(mean_wtp = weighted.mean(`pigprice`, `population`))
+averages[4,2] <- pigpriceavg
+
+#chickenprice
+dictionarychickenprice <- dictionary %>%
+  filter( is.na(`chickenprice`) == FALSE) %>%
+  group_by(Income.group) %>%
+  summarize(mean_wtp = weighted.mean(`chickenprice`, `population`))
+
+averages[1:3,3] <- dictionarychickenprice[1:3,2]
+
+rm(dictionarychickenprice)
+
+chickenpriceavg <- dictionary %>%
+  filter( is.na(`chickenprice`) == FALSE & is.na(`population`) == FALSE) %>%
+  summarize(mean_wtp = weighted.mean(`chickenprice`, `population`))
+averages[4,3] <- chickenpriceavg
+
+#chickenweight
+dictionarychickenweight <- dictionary %>%
+  filter( is.na(`chickenweight`) == FALSE) %>%
+  group_by(Income.group) %>%
+  summarize(mean_wtp = weighted.mean(`chickenweight`, `population`))
+
+averages[1:3,4] <- dictionarychickenweight[1:3,2]
+
+rm(dictionarychickenweight)
+
+chickenweightavg <- dictionary %>%
+  filter( is.na(`chickenweight`) == FALSE & is.na(`population`) == FALSE) %>%
+  summarize(mean_wtp = weighted.mean(`chickenweight`, `population`))
+averages[4,4] <- chickenweightavg
+
+#beddaycost
+dictionarybeddaycost <- dictionary %>%
+  filter( is.na(`beddaycost`) == FALSE) %>%
+  group_by(Income.group) %>%
+  summarize(mean_wtp = weighted.mean(`beddaycost`, `population`))
+
+averages[1:3,5] <- dictionarybeddaycost[1:3,2]
+
+rm(dictionarybeddaycost)
+
+beddaycostavg <- dictionary %>%
+  filter( is.na(`beddaycost`) == FALSE & is.na(`population`) == FALSE) %>%
+  summarize(mean_wtp = weighted.mean(`beddaycost`, `population`))
+averages[4,5] <- beddaycostavg
+
+#meatsupply
+dictionarymeatsupply <- dictionary %>%
+  filter( is.na(`meatsupply`) == FALSE) %>%
+  group_by(Income.group) %>%
+  summarize(mean_wtp = weighted.mean(`meatsupply`, `population`))
+
+averages[1:3,6] <- dictionarymeatsupply[1:3,2]
+
+rm(dictionarymeatsupply)
+
+meatsupplyavg <- dictionary %>%
+  filter( is.na(`meatsupply`) == FALSE & is.na(`population`) == FALSE) %>%
+  summarize(mean_wtp = weighted.mean(`meatsupply`, `population`))
+averages[4,6] <- meatsupplyavg
+
+#pigweight
+dictionarypigweight <- dictionary %>%
+  filter( is.na(`pigweight`) == FALSE) %>%
+  group_by(Income.group) %>%
+  summarize(mean_wtp = weighted.mean(`pigweight`, `population`))
+
+averages[1:3,7] <- dictionarypigweight[1:3,2]
+
+rm(dictionarypigweight)
+
+pigweightavg <- dictionary %>%
+  filter( is.na(`pigweight`) == FALSE & is.na(`population`) == FALSE) %>%
+  summarize(mean_wtp = weighted.mean(`pigweight`, `population`))
+averages[4,7] <- pigweightavg
+
+#portion working
+dictionaryportionworking <- dictionary %>%
+  filter( is.na(`portion working`) == FALSE) %>%
+  group_by(Income.group) %>%
+  summarize(mean_wtp = weighted.mean(`portion working`, `population`))
+
+averages[1:3,8] <- dictionaryportionworking[1:3,2]
+
+rm(dictionaryportionworking)
+
+portionworkingavg <- dictionary %>%
+  filter( is.na(`portion working`) == FALSE & is.na(`population`) == FALSE) %>%
+  summarize(mean_wtp = weighted.mean(`portion working`, `population`))
+averages[4,8] <- portionworkingavg
+
+#productivity
+dictionaryproductivity <- dictionary %>%
+  filter( is.na(`productivity`) == FALSE) %>%
+  group_by(Income.group) %>%
+  summarize(mean_wtp = weighted.mean(`productivity`, `population`))
+
+averages[1:3,9] <- dictionaryproductivity[1:3,2]
+
+rm(dictionaryproductivity)
+
+productivityavg <- dictionary %>%
+  filter( is.na(`productivity`) == FALSE & is.na(`population`) == FALSE) %>%
+  summarize(mean_wtp = weighted.mean(`productivity`, `population`))
+averages[4,9] <- productivityavg
+
+#DRI
+dictionaryDRI <- dictionary %>%
+  filter( is.na(`DRI`) == FALSE) %>%
+  group_by(Income.group) %>%
+  summarize(mean_wtp = weighted.mean(`DRI`, `population`))
+
+averages[1:3,10] <- dictionaryDRI[1:3,2]
+
+rm(dictionaryDRI)
+
+DRIavg <- dictionary %>%
+  filter( is.na(`DRI`) == FALSE & is.na(`population`) == FALSE) %>%
+  summarize(mean_wtp = weighted.mean(`DRI`, `population`))
+averages[4,10] <- DRIavg
+
+#incidence per 100k
+dictionaryincidenceper100k <- dictionary %>%
+  filter( is.na(`incidence per 100k`) == FALSE) %>%
+  group_by(Income.group) %>%
+  summarize(mean_wtp = weighted.mean(`incidence per 100k`, `population`))
+
+averages[1:3,11] <- dictionaryincidenceper100k[1:3,2]
+
+rm(dictionaryincidenceper100k)
+
+incidenceper100kavg <- dictionary %>%
+  filter( is.na(`incidence per 100k`) == FALSE & is.na(`population`) == FALSE) %>%
+  summarize(mean_wtp = weighted.mean(`incidence per 100k`, `population`))
+averages[4,11] <- incidenceper100kavg
+
+#mortality rate
+dictionarymortalityrate <- dictionary %>%
+  filter( is.na(`mortality rate`) == FALSE) %>%
+  group_by(Income.group) %>%
+  summarize(mean_wtp = weighted.mean(`mortality rate`, `population`))
+
+averages[1:3,12] <- dictionarymortalityrate[1:3,2]
+
+rm(dictionarymortalityrate)
+
+mortalityrateavg <- dictionary %>%
+  filter( is.na(`mortality rate`) == FALSE & is.na(`population`) == FALSE) %>%
+  summarize(mean_wtp = weighted.mean(`mortality rate`, `population`))
+averages[4,12] <- mortalityrateavg
+
+#mean(growth)
+dictionarymeangrowth <- dictionary %>%
+  filter( is.na(`mean(growth)`) == FALSE) %>%
+  group_by(Income.group) %>%
+  summarize(mean_wtp = weighted.mean(`mean(growth)`, `population`))
+
+averages[1:3,13] <- dictionarymeangrowth[1:3,2]
+
+rm(dictionarymeangrowth)
+
+meangrowthavg <- dictionary %>%
+  filter( is.na(`mean(growth)`) == FALSE & is.na(`population`) == FALSE) %>%
+  summarize(mean_wtp = weighted.mean(`mean(growth)`, `population`))
+averages[4,13] <- meangrowthavg
+
+#average wtp nominal
+dictionaryaveragewtpnominal <- dictionary %>%
   filter( is.na(`average wtp nominal`) == FALSE) %>%
   group_by(Income.group) %>%
-  mutate(`WAwtp` = weighted.mean(`average wtp nominal`, `population`))
+  summarize(mean_wtp = weighted.mean(`average wtp nominal`, `population`))
+
+averages[1:3,14] <- dictionaryaveragewtpnominal[1:3,2]
+
+rm(dictionaryaveragewtpnominal)
+
+averagewtpnominalavg <- dictionary %>%
+  filter( is.na(`average wtp nominal`) == FALSE & is.na(`population`) == FALSE) %>%
+  summarize(mean_wtp = weighted.mean(`average wtp nominal`, `population`))
+averages[4,14] <- averagewtpnominalavg
+
+#remove clutter
+rm("averagewtpnominalavg", "beddaycostavg", "chickenpriceavg",
+   "chickenweightavg", "DRIavg", "incidenceper100kavg", "meangrowthavg", 
+   "meatproductionavg", "meatsupplyavg", "mortalityrateavg", "pigpriceavg", 
+   "pigweightavg", "portionworkingavg", "productivityavg")
+
+
+# Distributions -----------------------------------------------------------
+
+dictionaryLIC <- dictionary[dictionary$Income.group == "Low income",]
+dictionaryMIC <- dictionary[dictionary$Income.group == "Middle income",]
+dictionaryHIC <- dictionary[dictionary$Income.group == "High income",]
+
+
+dictest <- dictionary %>%
+  filter(dictionary$`mean(growth)` > -5 & !is.na(dictionary$`mean(growth)`)) %>%
+  group_by(`Income.group`)
+  summarise(var = wtd.var(dictionary$`mean(growth)`, dictionary$population))
+
+LICgro <- dictionaryLIC %>%
+  filter(!is.na(dictionaryLIC$`mean(growth)`))
+LICgro <- LICgro$`mean(growth)`
+
+LICpop <- dictionaryLIC %>%
+  filter(!is.na(dictionaryLIC$`mean(growth)`))
+LICpop <- LICpop$population
+
+wtd.var(LICgro, LICpop)
