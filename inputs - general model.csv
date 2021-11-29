@@ -13,13 +13,13 @@ prod_pc,annual productivity per person working ($USD),91200.02,22875.54,22875.54
 unpaid_prod_pc,annual unpaid productivity per person ($USD),1.2935917,1.46548185,1.46548185,1.4849951,,,,,,,1.15,2.1,1.15,2.1,1.06,1.5,,,,,,,
 remaining_work_years,remaining years of work at median age (assuming retirement at 65),23,34,34,45,,,,,,,,,,,,,,,,,,,
 ,,,,,,,,,,,,,,,,,,,,,,,,
-pig_income_effect,,0,0,0,0,,-0.02,-0.01,0,0.01,0.02,-0.02,0.02,-0.02,0.02,-0.02,0.02,,,,,,,
+pig_income_effect,,0,0,0,0,,-0.02,-0.01,0,0.01,0.02,-0.02,0.02,-0.02,0.02,-0.02,0.02,"90% chance of beta, 10% chance of negative beta",1,39,1,39,1,39
 pig_money_saved,,0,0,0,0,,,,,,,,,,,,,,,,,,,
-chicken_income_effect,,0,0,0,0,,-0.02,-0.01,0,0.01,0.02,-0.02,0.02,-0.02,0.02,-0.02,0.02,,,,,,,
+chicken_income_effect,,0,0,0,0,,-0.02,-0.01,0,0.01,0.02,-0.02,0.02,-0.02,0.02,-0.02,0.02,"90% chance of beta, 10% chance of negative beta",1,39,1,39,1,39
 chicken_money_saved,,0,0,0,0,,,,,,,,,,,,,,,,,,,
-pig_mort_effect,,0,0,0,0,,-0.02,-0.01,0,0.01,0.02,-0.02,0.02,-0.02,0.02,-0.02,0.02,,,,,,,
-chicken_mort_effect,,0,0,0,0,,-0.02,-0.01,0,0.01,0.02,-0.02,0.02,-0.02,0.02,-0.02,0.02,,,,,,,
-res_change,change in the prevalence of AMR in human infections following the intervention, , , , , ,-0.025,-0.025,-0.05,-0.1,-0.16,-0.025,-0.16,-0.025,-0.16,-0.025,-0.16,,,,,,,
+pig_mort_effect,,0,0,0,0,,-0.02,-0.01,0,0.01,0.02,-0.02,0.02,-0.02,0.02,-0.02,0.02,"10% chance of beta, 90% chance of negative beta",1,39,1,39,1,39
+chicken_mort_effect,,0,0,0,0,,-0.02,-0.01,0,0.01,0.02,-0.02,0.02,-0.02,0.02,-0.02,0.02,"10% chance of beta, 90% chance of negative beta",1,39,1,39,1,39
+res_change,change in the prevalence of AMR in human infections following the intervention, , , , , ,-0.025,-0.025,-0.05,-0.1,-0.16,-0.025,-0.16,-0.025,-0.16,-0.025,-0.16,negative beta,1.1,20.9,1.1,20.9,1.1,20.9
 admin_cost,,1000000,1000000,1000000,1000000,,,,,,,,,,,,,,,,,,,
 ,,,,,,,,,,,,,,,,,,,,,,,,
 ,,,,,,,,,,,,,,,,,,,,,,,,
@@ -36,7 +36,7 @@ los_res,Hospital LoS from res infection (years),0.030285284,0.030285284,0.030285
 bed_day_cost,cost of a single day in hospital,627.543312,39.73242,39.73242,6.232739,,,,,,,5.874616,28.0971487,18.3208492,243.34637,139.520606,901.603491,lnorm,1.257771,0.925305,3.2110302,0.9573006,6.324308,0.5410926
 qol_sick,QoL from being in hospital with a BSI,0.66035,0.66035,0.66035,0.66035,,,,,,,0.57775,0.7345,0.57775,0.7345,0.57775,0.7345,beta,195,100,195,100,195,100
 qol_seq,QoL from having sequelae,0.9355,0.9355,0.9355,0.9355,,,,,,,0.9123364,0.9610594,0.9123364,0.9610594,0.9123364,0.9610594,beta ,1090,75,1090,75,1090,75
-amr_grow,annual rate of AMR growth (portion of BSIs from res bacteria),1.02844688,1.02844688,1.02844688,1.02844688,,,,,,,0.979275,1.051825,0.979275,1.051825,0.979275,1.051825,1+ gamma,6853.33,0.015,6853.33,0.015,6853.33,0.015
+amr_grow,annual rate of AMR growth (portion of BSIs from res bacteria),1.02844688,1.02844688,1.02844688,1.02844688,,,,,,,0.979275,1.051825,0.979275,1.051825,0.979275,1.051825,0.01 * gamma,6853.33,0.015,6853.33,0.015,6853.33,0.015
 remaining_ly,remaining life years,39,41,41,45,,,,,,,,,,,,,,,,,,,
 background_qol,background quality of life,1,1,1,1,,,,,,,,,,,,,,,,,,,
 ,,,,,,,,,,,,,,,,,,,,,,,,

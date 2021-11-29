@@ -30,17 +30,19 @@ library("forcats")
 inputs_general <- read.csv(here("inputs - general model.csv"))
 inputs_general <- as.data.table(inputs_general)
 colnames(inputs_general) <- c("parameter", "description", "HIC", "MIC-I", "MIC-S", "LIC", "Value", "Min", "Lo", "Med", "Hi", "Max", 
-                      "LIC min", "LIC max", "MIC min", "MIC max", "HIC min", "HIC max")
+                      "LIC min", "LIC max", "MIC min", "MIC max", "HIC min", "HIC max",
+                      "Distribution", "LIC param 1", "LIC param 2", "MIC param 1", "MIC param 2",
+                      "HIC param 1", "HIC param 2")
 
 pop <- read.csv(here("Vietnam Population.csv"))
 
 dependency <- read.csv(here("Viet Nam dependency ratio.csv"))
 
-inputs_casestudy <- read.csv(here("inputs - case study - Copy.csv"))
+inputs_casestudy <- read.csv(here("inputs - case study.csv"))
 inputs_casestudy <- as.data.table(inputs_casestudy)
 colnames(inputs_casestudy) <- c("parameter", "description", "Viet Nam", "Value", "Min", "Lo", "Med", "Hi", "Max")
 
-source("Functions2.R")
+source("Functions.R")
 
 
 # Default scenario --------------------------------------------------------
@@ -50,7 +52,7 @@ scenario_prod <- "HCA"
 scenario_transmission <- "med"
 scenario_farm_effect <- "hi"
 
-number_runs <- 10
+number_runs <- 1000
 
 # Table 1 - Maximum Cost under Each Scenario ------------------------------
 
@@ -301,6 +303,7 @@ write.xlsx(scenario_analysis_HIC, "Outputs/Table 1 D.xlsx")
 
 scenario_prod <- "HCA" 
 scenario_transmission <- "med"
+scenrio_farm_effect <- "med"
 
 ###LIC
 
@@ -311,7 +314,9 @@ LIC_MC_Vector <- rep(0, number_runs)
 inputs_LIC <- read.csv(here("inputs - general model.csv"))
 inputs_LIC <- as.data.table(inputs_LIC)
 colnames(inputs_LIC) <- c("parameter", "description", "HIC", "MIC-I", "MIC-S", "LIC", "Value", "Min", "Lo", "Med", "Hi", "Max", 
-                          "LIC min", "LIC max", "MIC min", "MIC max", "HIC min", "HIC max")
+                          "LIC min", "LIC max", "MIC min", "MIC max", "HIC min", "HIC max",
+                          "Distribution", "LIC param 1", "LIC param 2", "MIC param 1", "MIC param 2",
+                          "HIC param 1", "HIC param 2")
 
 set.seed(42069)
 
@@ -319,12 +324,118 @@ for(i in 1:number_runs){
   #load dataset
   inputsPSA <- inputs_LIC
   
-  for(j in c(3,5:12,15,17,19:20, 27:38, 42:60)){
-    inputsPSA[j,6] <- runif(1,as.numeric(inputsPSA[j,13]),as.numeric(inputsPSA[j,14])) 
+  inputsPSA[parameter == "well_sick", "LIC"] <- rbeta(1, as.numeric(inputsPSA[parameter == "well_sick", "LIC param 1"]), 
+                                                           as.numeric(inputsPSA[parameter == "well_sick", "LIC param 2"]))
+  
+  inputsPSA[parameter == "portion_res", "LIC"] <- rbeta(1, as.numeric(inputsPSA[parameter == "portion_res", "LIC param 1"]), 
+                                                           as.numeric(inputsPSA[parameter == "portion_res", "LIC param 2"]))
+  
+  inputsPSA[parameter == "mort_res", "LIC"] <- 1.62 * rbeta(1,as.numeric(inputsPSA[parameter == "mort_res", "LIC param 1"]), 
+                                                           as.numeric(inputsPSA[parameter == "mort_res", "LIC param 2"]))
+  
+  inputsPSA[parameter == "mort_sus", "LIC"] <- rbeta(1, as.numeric(inputsPSA[parameter == "mort_sus", "LIC param 1"]), 
+                                                           as.numeric(inputsPSA[parameter == "mort_sus", "LIC param 2"]))
+  
+  inputsPSA[parameter == "los_sus", "LIC"] <- (1/365.25) * rlnorm(1, as.numeric(inputsPSA[parameter == "los_sus", "LIC param 1"]), 
+                                                           as.numeric(inputsPSA[parameter == "los_sus", "LIC param 2"]))
+  
+  inputsPSA[parameter == "los_res", "LIC"] <- (1.27/365.25) * rlnorm(1, as.numeric(inputsPSA[parameter == "los_res", "LIC param 1"]), 
+                                                           as.numeric(inputsPSA[parameter == "los_res", "LIC param 2"]))
+  
+  inputsPSA[parameter == "bed_day_cost", "LIC"] <- rlnorm(1, as.numeric(inputsPSA[parameter == "bed_day_cost", "LIC param 1"]), 
+                                                           as.numeric(inputsPSA[parameter == "bed_day_cost", "LIC param 2"]))
+  
+  inputsPSA[parameter == "qol_sick", "LIC"] <- rbeta(1, as.numeric(inputsPSA[parameter == "qol_sick", "LIC param 1"]), 
+                                                           as.numeric(inputsPSA[parameter == "qol_sick", "LIC param 2"]))
+  
+  inputsPSA[parameter == "qol_seq", "LIC"] <- rbeta(1, as.numeric(inputsPSA[parameter == "qol_seq", "LIC param 1"]), 
+                                                           as.numeric(inputsPSA[parameter == "qol_seq", "LIC param 2"]))
+  
+  inputsPSA[parameter == "amr_grow", "LIC"] <- 0.01 * rgamma(1, as.numeric(inputsPSA[parameter == "amr_grow", "LIC param 1"]), 
+                                                           scale = as.numeric(inputsPSA[parameter == "amr_grow", "LIC param 2"]))
+  
+  inputsPSA[parameter == "n_pigs", "LIC"] <- rlnorm(1, as.numeric(inputsPSA[parameter == "n_pigs", "LIC param 1"]), 
+                                                           as.numeric(inputsPSA[parameter == "n_pigs", "LIC param 2"]))
+  
+  inputsPSA[parameter == "n_chickens", "LIC"] <- rlnorm(1, as.numeric(inputsPSA[parameter == "n_chickens", "LIC param 1"]), 
+                                                           as.numeric(inputsPSA[parameter == "n_chickens", "LIC param 2"]))
+  
+  inputsPSA[parameter == "n_chickens_farm_ind", "LIC"] <- rlnorm(1, as.numeric(inputsPSA[parameter == "n_chickens_farm_ind", "LIC param 1"]), 
+                                                           as.numeric(inputsPSA[parameter == "n_chickens_farm_ind", "LIC param 2"]))
+  
+  inputsPSA[parameter == "n_chickens_farm_small", "LIC"] <- rlnorm(1, as.numeric(inputsPSA[parameter == "n_chickens_farm_small", "LIC param 1"]), 
+                                                           as.numeric(inputsPSA[parameter == "n_chickens_farm_small", "LIC param 2"]))
+  
+  inputsPSA[parameter == "n_pigs_farm_ind", "LIC"] <- rlnorm(1, as.numeric(inputsPSA[parameter == "n_pigs_farm_ind", "LIC param 1"]), 
+                                                           as.numeric(inputsPSA[parameter == "n_pigs_farm_ind", "LIC param 2"]))
+  
+  inputsPSA[parameter == "n_pigs_farm_small", "LIC"] <- rlnorm(1, as.numeric(inputsPSA[parameter == "n_pigs_farm_small", "LIC param 1"]), 
+                                                           as.numeric(inputsPSA[parameter == "n_pigs_farm_small", "LIC param 2"]))
+  
+  inputsPSA[parameter == "portion_animals_ind", "LIC"] <- rbeta(1, as.numeric(inputsPSA[parameter == "portion_animals_ind", "LIC param 1"]), 
+                                                           as.numeric(inputsPSA[parameter == "portion_animals_ind", "LIC param 2"]))
+  
+  inputsPSA[parameter == "pig_price", "LIC"] <- rlnorm(1, as.numeric(inputsPSA[parameter == "pig_price", "LIC param 1"]), 
+                                                           as.numeric(inputsPSA[parameter == "pig_price", "LIC param 2"]))
+  
+  inputsPSA[parameter == "chicken_price", "LIC"] <- rlnorm(1, as.numeric(inputsPSA[parameter == "chicken_price", "LIC param 1"]), 
+                                                           as.numeric(inputsPSA[parameter == "chicken_price", "LIC param 2"]))
+  
+  inputsPSA[parameter == "c_mort_ind", "LIC"] <- rbeta(1, as.numeric(inputsPSA[parameter == "c_mort_ind", "LIC param 1"]), 
+                                                           as.numeric(inputsPSA[parameter == "c_mort_ind", "LIC param 2"]))
+  
+  inputsPSA[parameter == "c_mort_small", "LIC"] <- rbeta(1, as.numeric(inputsPSA[parameter == "c_mort_small", "LIC param 1"]), 
+                                                           as.numeric(inputsPSA[parameter == "c_mort_small", "LIC param 2"]))
+  
+  inputsPSA[parameter == "p_mort_ind", "LIC"] <- rbeta(1, as.numeric(inputsPSA[parameter == "p_mort_ind", "LIC param 1"]), 
+                                                           as.numeric(inputsPSA[parameter == "p_mort_ind", "LIC param 2"]))
+  
+  inputsPSA[parameter == "p_mort_small", "LIC"] <- rbeta(1, as.numeric(inputsPSA[parameter == "p_mort_small", "LIC param 1"]), 
+                                                           as.numeric(inputsPSA[parameter == "p_mort_small", "LIC param 2"]))
+  
+  inputsPSA[parameter == "res_change", "Med"] <- -1 * rbeta(1, as.numeric(inputsPSA[parameter == "res_change", "LIC param 1"]), 
+                                                            as.numeric(inputsPSA[parameter == "res_change", "LIC param 2"]))
+  
+  q <- runif(1)
+  
+  if(q < 0.1){
+    inputsPSA[parameter == "pig_income_effect", "Med"] <- -1 * rbeta(1, as.numeric(inputsPSA[parameter == "pig_income_effect", "LIC param 1"]),
+                                                                as.numeric(inputsPSA[parameter == "pig_income_effect", "LIC param 2"]))
+  } else if (q >= 0.1){
+    inputsPSA[parameter == "pig_income_effect", "Med"] <- rbeta(1, as.numeric(inputsPSA[parameter == "pig_income_effect", "LIC param 1"]),
+                                                                     as.numeric(inputsPSA[parameter == "pig_income_effect", "LIC param 2"]))
   }
   
-  inputsPSA[21,10] <- runif(1,as.numeric(inputsPSA[21,14]),as.numeric(inputsPSA[21,13]))
+  p <- runif(1)
   
+  if(p < 0.1){
+    inputsPSA[parameter == "chicken_income_effect", "Med"] <- -1 * rbeta(1, as.numeric(inputsPSA[parameter == "chicken_income_effect", "LIC param 1"]),
+                                                                     as.numeric(inputsPSA[parameter == "chicken_income_effect", "LIC param 2"]))
+  } else if (p >= 0.1){
+    inputsPSA[parameter == "chicken_income_effect", "Med"] <- rbeta(1, as.numeric(inputsPSA[parameter == "chicken_income_effect", "LIC param 1"]),
+                                                                as.numeric(inputsPSA[parameter == "chicken_income_effect", "LIC param 2"]))
+  }
+  
+  r <- runif(1)
+  
+  if(r < 0.9){
+    inputsPSA[parameter == "pig_mort_effect", "Med"] <- -1 * rbeta(1, as.numeric(inputsPSA[parameter == "pig_mort_effect", "LIC param 1"]),
+                                                                     as.numeric(inputsPSA[parameter == "pig_mort_effect", "LIC param 2"]))
+  } else if (r >= 0.9){
+    inputsPSA[parameter == "pig_mort_effect", "Med"] <- rbeta(1, as.numeric(inputsPSA[parameter == "pig_mort_effect", "LIC param 1"]),
+                                                                as.numeric(inputsPSA[parameter == "pig_mort_effect", "LIC param 2"]))
+  }
+  
+  s <- runif(1)
+  
+  if(s < 0.9){
+    inputsPSA[parameter == "chicken_mort_effect", "Med"] <- -1 * rbeta(1, as.numeric(inputsPSA[parameter == "chicken_mort_effect", "LIC param 1"]),
+                                                                         as.numeric(inputsPSA[parameter == "chicken_mort_effect", "LIC param 2"]))
+  } else if (s >= 0.9){
+    inputsPSA[parameter == "chicken_mort_effect", "Med"] <- rbeta(1, as.numeric(inputsPSA[parameter == "chicken_mort_effect", "LIC param 1"]),
+                                                                    as.numeric(inputsPSA[parameter == "chicken_mort_effect", "LIC param 2"]))
+  }
+
   #store result in vector
   LIC_MC_Vector[i] <- as.data.frame(Model(inputsPSA, scenario_income, scenario_prod, scenario_transmission,scenario_farm_effect))[1,1]
 }
@@ -353,7 +464,9 @@ MIC_MC_Vector <- rep(0, number_runs)
 inputs_MIC <- read.csv(here("inputs - general model.csv"))
 inputs_MIC <- as.data.table(inputs_MIC)
 colnames(inputs_MIC) <- c("parameter", "description", "HIC", "MIC-I", "MIC-S", "LIC", "Value", "Min", "Lo", "Med", "Hi", "Max", 
-                          "LIC min", "LIC max", "MIC min", "MIC max", "HIC min", "HIC max")
+                          "LIC min", "LIC max", "MIC min", "MIC max", "HIC min", "HIC max",
+                          "Distribution", "LIC param 1", "LIC param 2", "MIC param 1", "MIC param 2",
+                          "HIC param 1", "HIC param 2")
 
 set.seed(42069)
 
@@ -361,11 +474,117 @@ for(i in 1:number_runs){
   #load dataset
   inputsPSA <- inputs_MIC
   
-  for(j in c(3,5:12,15,17,19:20, 27:38, 42:60)){
-    inputsPSA[j,5] <- runif(1,as.numeric(inputsPSA[j,15]),as.numeric(inputsPSA[j,16])) 
+  inputsPSA[parameter == "well_sick", "MIC-S"] <- rbeta(1, as.numeric(inputsPSA[parameter == "well_sick", "MIC param 1"]), 
+                                                      as.numeric(inputsPSA[parameter == "well_sick", "MIC param 2"]))
+  
+  inputsPSA[parameter == "portion_res", "MIC-S"] <- rbeta(1, as.numeric(inputsPSA[parameter == "portion_res", "MIC param 1"]), 
+                                                        as.numeric(inputsPSA[parameter == "portion_res", "MIC param 2"]))
+  
+  inputsPSA[parameter == "mort_res", "MIC-S"] <- 1.62 * rbeta(1,as.numeric(inputsPSA[parameter == "mort_res", "MIC param 1"]), 
+                                                            as.numeric(inputsPSA[parameter == "mort_res", "MIC param 2"]))
+  
+  inputsPSA[parameter == "mort_sus", "MIC-S"] <- rbeta(1, as.numeric(inputsPSA[parameter == "mort_sus", "MIC param 1"]), 
+                                                     as.numeric(inputsPSA[parameter == "mort_sus", "MIC param 2"]))
+  
+  inputsPSA[parameter == "los_sus", "MIC-S"] <- (1/365.25) * rlnorm(1, as.numeric(inputsPSA[parameter == "los_sus", "MIC param 1"]), 
+                                                                  as.numeric(inputsPSA[parameter == "los_sus", "MIC param 2"]))
+  
+  inputsPSA[parameter == "los_res", "MIC-S"] <- (1.27/365.25) * rlnorm(1, as.numeric(inputsPSA[parameter == "los_res", "MIC param 1"]), 
+                                                                     as.numeric(inputsPSA[parameter == "los_res", "MIC param 2"]))
+  
+  inputsPSA[parameter == "bed_day_cost", "MIC-S"] <- rlnorm(1, as.numeric(inputsPSA[parameter == "bed_day_cost", "MIC param 1"]), 
+                                                          as.numeric(inputsPSA[parameter == "bed_day_cost", "MIC param 2"]))
+  
+  inputsPSA[parameter == "qol_sick", "MIC-S"] <- rbeta(1, as.numeric(inputsPSA[parameter == "qol_sick", "MIC param 1"]), 
+                                                     as.numeric(inputsPSA[parameter == "qol_sick", "MIC param 2"]))
+  
+  inputsPSA[parameter == "qol_seq", "MIC-S"] <- rbeta(1, as.numeric(inputsPSA[parameter == "qol_seq", "MIC param 1"]), 
+                                                    as.numeric(inputsPSA[parameter == "qol_seq", "MIC param 2"]))
+  
+  inputsPSA[parameter == "amr_grow", "MIC-S"] <- 0.01 * rgamma(1, as.numeric(inputsPSA[parameter == "amr_grow", "MIC param 1"]), 
+                                                             scale = as.numeric(inputsPSA[parameter == "amr_grow", "MIC param 2"]))
+  
+  inputsPSA[parameter == "n_pigs", "MIC-S"] <- rlnorm(1, as.numeric(inputsPSA[parameter == "n_pigs", "MIC param 1"]), 
+                                                    as.numeric(inputsPSA[parameter == "n_pigs", "MIC param 2"]))
+  
+  inputsPSA[parameter == "n_chickens", "MIC-S"] <- rlnorm(1, as.numeric(inputsPSA[parameter == "n_chickens", "MIC param 1"]), 
+                                                        as.numeric(inputsPSA[parameter == "n_chickens", "MIC param 2"]))
+  
+  inputsPSA[parameter == "n_chickens_farm_ind", "MIC-S"] <- rlnorm(1, as.numeric(inputsPSA[parameter == "n_chickens_farm_ind", "MIC param 1"]), 
+                                                                 as.numeric(inputsPSA[parameter == "n_chickens_farm_ind", "MIC param 2"]))
+  
+  inputsPSA[parameter == "n_chickens_farm_small", "MIC-S"] <- rlnorm(1, as.numeric(inputsPSA[parameter == "n_chickens_farm_small", "MIC param 1"]), 
+                                                                   as.numeric(inputsPSA[parameter == "n_chickens_farm_small", "MIC param 2"]))
+  
+  inputsPSA[parameter == "n_pigs_farm_ind", "MIC-S"] <- rlnorm(1, as.numeric(inputsPSA[parameter == "n_pigs_farm_ind", "MIC param 1"]), 
+                                                             as.numeric(inputsPSA[parameter == "n_pigs_farm_ind", "MIC param 2"]))
+  
+  inputsPSA[parameter == "n_pigs_farm_small", "MIC-S"] <- rlnorm(1, as.numeric(inputsPSA[parameter == "n_pigs_farm_small", "MIC param 1"]), 
+                                                               as.numeric(inputsPSA[parameter == "n_pigs_farm_small", "MIC param 2"]))
+  
+  inputsPSA[parameter == "portion_animals_ind", "MIC-S"] <- rbeta(1, as.numeric(inputsPSA[parameter == "portion_animals_ind", "MIC param 1"]), 
+                                                                as.numeric(inputsPSA[parameter == "portion_animals_ind", "MIC param 2"]))
+  
+  inputsPSA[parameter == "pig_price", "MIC-S"] <- rlnorm(1, as.numeric(inputsPSA[parameter == "pig_price", "MIC param 1"]), 
+                                                       as.numeric(inputsPSA[parameter == "pig_price", "MIC param 2"]))
+  
+  inputsPSA[parameter == "chicken_price", "MIC-S"] <- rlnorm(1, as.numeric(inputsPSA[parameter == "chicken_price", "MIC param 1"]), 
+                                                           as.numeric(inputsPSA[parameter == "chicken_price", "MIC param 2"]))
+  
+  inputsPSA[parameter == "c_mort_ind", "MIC-S"] <- rbeta(1, as.numeric(inputsPSA[parameter == "c_mort_ind", "MIC param 1"]), 
+                                                       as.numeric(inputsPSA[parameter == "c_mort_ind", "MIC param 2"]))
+  
+  inputsPSA[parameter == "c_mort_small", "MIC-S"] <- rbeta(1, as.numeric(inputsPSA[parameter == "c_mort_small", "MIC param 1"]), 
+                                                         as.numeric(inputsPSA[parameter == "c_mort_small", "MIC param 2"]))
+  
+  inputsPSA[parameter == "p_mort_ind", "MIC-S"] <- rbeta(1, as.numeric(inputsPSA[parameter == "p_mort_ind", "MIC param 1"]), 
+                                                       as.numeric(inputsPSA[parameter == "p_mort_ind", "MIC param 2"]))
+  
+  inputsPSA[parameter == "p_mort_small", "MIC-S"] <- rbeta(1, as.numeric(inputsPSA[parameter == "p_mort_small", "MIC param 1"]), 
+                                                         as.numeric(inputsPSA[parameter == "p_mort_small", "MIC param 2"]))
+  
+  inputsPSA[parameter == "res_change", "Med"] <- -1 * rbeta(1, as.numeric(inputsPSA[parameter == "res_change", "MIC param 1"]), 
+                                                            as.numeric(inputsPSA[parameter == "res_change", "MIC param 2"]))
+  
+  q <- runif(1)
+  
+  if(q < 0.1){
+    inputsPSA[parameter == "pig_income_effect", "Med"] <- -1 * rbeta(1, as.numeric(inputsPSA[parameter == "pig_income_effect", "MIC param 1"]),
+                                                                     as.numeric(inputsPSA[parameter == "pig_income_effect", "MIC param 2"]))
+  } else if (q >= 0.1){
+    inputsPSA[parameter == "pig_income_effect", "Med"] <- rbeta(1, as.numeric(inputsPSA[parameter == "pig_income_effect", "MIC param 1"]),
+                                                                as.numeric(inputsPSA[parameter == "pig_income_effect", "MIC param 2"]))
   }
   
-  inputsPSA[21,10] <- runif(1,as.numeric(inputsPSA[21,16]),as.numeric(inputsPSA[21,15]))
+  p <- runif(1)
+  
+  if(p < 0.1){
+    inputsPSA[parameter == "chicken_income_effect", "Med"] <- -1 * rbeta(1, as.numeric(inputsPSA[parameter == "chicken_income_effect", "MIC param 1"]),
+                                                                         as.numeric(inputsPSA[parameter == "chicken_income_effect", "MIC param 2"]))
+  } else if (p >= 0.1){
+    inputsPSA[parameter == "chicken_income_effect", "Med"] <- rbeta(1, as.numeric(inputsPSA[parameter == "chicken_income_effect", "MIC param 1"]),
+                                                                    as.numeric(inputsPSA[parameter == "chicken_income_effect", "MIC param 2"]))
+  }
+  
+  r <- runif(1)
+  
+  if(r < 0.9){
+    inputsPSA[parameter == "pig_mort_effect", "Med"] <- -1 * rbeta(1, as.numeric(inputsPSA[parameter == "pig_mort_effect", "MIC param 1"]),
+                                                                   as.numeric(inputsPSA[parameter == "pig_mort_effect", "MIC param 2"]))
+  } else if (r >= 0.9){
+    inputsPSA[parameter == "pig_mort_effect", "Med"] <- rbeta(1, as.numeric(inputsPSA[parameter == "pig_mort_effect", "MIC param 1"]),
+                                                              as.numeric(inputsPSA[parameter == "pig_mort_effect", "MIC param 2"]))
+  }
+  
+  s <- runif(1)
+  
+  if(s < 0.9){
+    inputsPSA[parameter == "chicken_mort_effect", "Med"] <- -1 * rbeta(1, as.numeric(inputsPSA[parameter == "chicken_mort_effect", "MIC param 1"]),
+                                                                       as.numeric(inputsPSA[parameter == "chicken_mort_effect", "MIC param 2"]))
+  } else if (s >= 0.9){
+    inputsPSA[parameter == "chicken_mort_effect", "Med"] <- rbeta(1, as.numeric(inputsPSA[parameter == "chicken_mort_effect", "MIC param 1"]),
+                                                                  as.numeric(inputsPSA[parameter == "chicken_mort_effect", "MIC param 2"]))
+  }
   
   #store result in vector
   MIC_MC_Vector[i] <- as.data.frame(Model(inputsPSA, scenario_income, scenario_prod, scenario_transmission,scenario_farm_effect))[1,1]
@@ -394,7 +613,9 @@ HIC_MC_Vector <- rep(0, number_runs)
 inputs_HIC <- read.csv(here("inputs - general model.csv"))
 inputs_HIC <- as.data.table(inputs_HIC)
 colnames(inputs_HIC) <- c("parameter", "description", "HIC", "MIC-I", "MIC-S", "LIC", "Value", "Min", "Lo", "Med", "Hi", "Max", 
-                          "LIC min", "LIC max", "MIC min", "MIC max", "HIC min", "HIC max")
+                          "LIC min", "LIC max", "MIC min", "MIC max", "HIC min", "HIC max",
+                          "Distribution", "LIC param 1", "LIC param 2", "MIC param 1", "MIC param 2",
+                          "HIC param 1", "HIC param 2")
 
 set.seed(42069)
 
@@ -402,11 +623,117 @@ for(i in 1:number_runs){
   #load dataset
   inputsPSA <- inputs_HIC
   
-  for(j in c(3,5:12,15,17,19:20, 27:38, 42:60)){
-    inputsPSA[j,3] <- runif(1,as.numeric(inputsPSA[j,17]),as.numeric(inputsPSA[j,18])) 
+  inputsPSA[parameter == "well_sick", "HIC"] <- rbeta(1, as.numeric(inputsPSA[parameter == "well_sick", "HIC param 1"]), 
+                                                        as.numeric(inputsPSA[parameter == "well_sick", "HIC param 2"]))
+  
+  inputsPSA[parameter == "portion_res", "HIC"] <- rbeta(1, as.numeric(inputsPSA[parameter == "portion_res", "HIC param 1"]), 
+                                                          as.numeric(inputsPSA[parameter == "portion_res", "HIC param 2"]))
+  
+  inputsPSA[parameter == "mort_res", "HIC"] <- 1.62 * rbeta(1,as.numeric(inputsPSA[parameter == "mort_res", "HIC param 1"]), 
+                                                              as.numeric(inputsPSA[parameter == "mort_res", "HIC param 2"]))
+  
+  inputsPSA[parameter == "mort_sus", "HIC"] <- rbeta(1, as.numeric(inputsPSA[parameter == "mort_sus", "HIC param 1"]), 
+                                                       as.numeric(inputsPSA[parameter == "mort_sus", "HIC param 2"]))
+  
+  inputsPSA[parameter == "los_sus", "HIC"] <- (1/365.25) * rlnorm(1, as.numeric(inputsPSA[parameter == "los_sus", "HIC param 1"]), 
+                                                                    as.numeric(inputsPSA[parameter == "los_sus", "HIC param 2"]))
+  
+  inputsPSA[parameter == "los_res", "HIC"] <- (1.27/365.25) * rlnorm(1, as.numeric(inputsPSA[parameter == "los_res", "HIC param 1"]), 
+                                                                       as.numeric(inputsPSA[parameter == "los_res", "HIC param 2"]))
+  
+  inputsPSA[parameter == "bed_day_cost", "HIC"] <- rlnorm(1, as.numeric(inputsPSA[parameter == "bed_day_cost", "HIC param 1"]), 
+                                                            as.numeric(inputsPSA[parameter == "bed_day_cost", "HIC param 2"]))
+  
+  inputsPSA[parameter == "qol_sick", "HIC"] <- rbeta(1, as.numeric(inputsPSA[parameter == "qol_sick", "HIC param 1"]), 
+                                                       as.numeric(inputsPSA[parameter == "qol_sick", "HIC param 2"]))
+  
+  inputsPSA[parameter == "qol_seq", "HIC"] <- rbeta(1, as.numeric(inputsPSA[parameter == "qol_seq", "HIC param 1"]), 
+                                                      as.numeric(inputsPSA[parameter == "qol_seq", "HIC param 2"]))
+  
+  inputsPSA[parameter == "amr_grow", "HIC"] <- 0.01 * rgamma(1, as.numeric(inputsPSA[parameter == "amr_grow", "HIC param 1"]), 
+                                                               scale = as.numeric(inputsPSA[parameter == "amr_grow", "HIC param 2"]))
+  
+  inputsPSA[parameter == "n_pigs", "HIC"] <- rlnorm(1, as.numeric(inputsPSA[parameter == "n_pigs", "HIC param 1"]), 
+                                                      as.numeric(inputsPSA[parameter == "n_pigs", "HIC param 2"]))
+  
+  inputsPSA[parameter == "n_chickens", "HIC"] <- rlnorm(1, as.numeric(inputsPSA[parameter == "n_chickens", "HIC param 1"]), 
+                                                          as.numeric(inputsPSA[parameter == "n_chickens", "HIC param 2"]))
+  
+  inputsPSA[parameter == "n_chickens_farm_ind", "HIC"] <- rlnorm(1, as.numeric(inputsPSA[parameter == "n_chickens_farm_ind", "HIC param 1"]), 
+                                                                   as.numeric(inputsPSA[parameter == "n_chickens_farm_ind", "HIC param 2"]))
+  
+  inputsPSA[parameter == "n_chickens_farm_small", "HIC"] <- rlnorm(1, as.numeric(inputsPSA[parameter == "n_chickens_farm_small", "HIC param 1"]), 
+                                                                     as.numeric(inputsPSA[parameter == "n_chickens_farm_small", "HIC param 2"]))
+  
+  inputsPSA[parameter == "n_pigs_farm_ind", "HIC"] <- rlnorm(1, as.numeric(inputsPSA[parameter == "n_pigs_farm_ind", "HIC param 1"]), 
+                                                               as.numeric(inputsPSA[parameter == "n_pigs_farm_ind", "HIC param 2"]))
+  
+  inputsPSA[parameter == "n_pigs_farm_small", "HIC"] <- rlnorm(1, as.numeric(inputsPSA[parameter == "n_pigs_farm_small", "HIC param 1"]), 
+                                                                 as.numeric(inputsPSA[parameter == "n_pigs_farm_small", "HIC param 2"]))
+  
+  inputsPSA[parameter == "portion_animals_ind", "HIC"] <- rbeta(1, as.numeric(inputsPSA[parameter == "portion_animals_ind", "HIC param 1"]), 
+                                                                  as.numeric(inputsPSA[parameter == "portion_animals_ind", "HIC param 2"]))
+  
+  inputsPSA[parameter == "pig_price", "HIC"] <- rlnorm(1, as.numeric(inputsPSA[parameter == "pig_price", "HIC param 1"]), 
+                                                         as.numeric(inputsPSA[parameter == "pig_price", "HIC param 2"]))
+  
+  inputsPSA[parameter == "chicken_price", "HIC"] <- rlnorm(1, as.numeric(inputsPSA[parameter == "chicken_price", "HIC param 1"]), 
+                                                             as.numeric(inputsPSA[parameter == "chicken_price", "HIC param 2"]))
+  
+  inputsPSA[parameter == "c_mort_ind", "HIC"] <- rbeta(1, as.numeric(inputsPSA[parameter == "c_mort_ind", "HIC param 1"]), 
+                                                         as.numeric(inputsPSA[parameter == "c_mort_ind", "HIC param 2"]))
+  
+  inputsPSA[parameter == "c_mort_small", "HIC"] <- rbeta(1, as.numeric(inputsPSA[parameter == "c_mort_small", "HIC param 1"]), 
+                                                           as.numeric(inputsPSA[parameter == "c_mort_small", "HIC param 2"]))
+  
+  inputsPSA[parameter == "p_mort_ind", "HIC"] <- rbeta(1, as.numeric(inputsPSA[parameter == "p_mort_ind", "HIC param 1"]), 
+                                                         as.numeric(inputsPSA[parameter == "p_mort_ind", "HIC param 2"]))
+  
+  inputsPSA[parameter == "p_mort_small", "HIC"] <- rbeta(1, as.numeric(inputsPSA[parameter == "p_mort_small", "HIC param 1"]), 
+                                                           as.numeric(inputsPSA[parameter == "p_mort_small", "HIC param 2"]))
+  
+  inputsPSA[parameter == "res_change", "Med"] <- -1 * rbeta(1, as.numeric(inputsPSA[parameter == "res_change", "HIC param 1"]), 
+                                                            as.numeric(inputsPSA[parameter == "res_change", "HIC param 2"]))
+  
+  q <- runif(1)
+  
+  if(q < 0.1){
+    inputsPSA[parameter == "pig_income_effect", "Med"] <- -1 * rbeta(1, as.numeric(inputsPSA[parameter == "pig_income_effect", "HIC param 1"]),
+                                                                     as.numeric(inputsPSA[parameter == "pig_income_effect", "HIC param 2"]))
+  } else if (q >= 0.1){
+    inputsPSA[parameter == "pig_income_effect", "Med"] <- rbeta(1, as.numeric(inputsPSA[parameter == "pig_income_effect", "HIC param 1"]),
+                                                                as.numeric(inputsPSA[parameter == "pig_income_effect", "HIC param 2"]))
   }
   
-  inputsPSA[21,10] <- runif(1,as.numeric(inputsPSA[21,18]),as.numeric(inputsPSA[21,17]))
+  p <- runif(1)
+  
+  if(p < 0.1){
+    inputsPSA[parameter == "chicken_income_effect", "Med"] <- -1 * rbeta(1, as.numeric(inputsPSA[parameter == "chicken_income_effect", "HIC param 1"]),
+                                                                         as.numeric(inputsPSA[parameter == "chicken_income_effect", "HIC param 2"]))
+  } else if (p >= 0.1){
+    inputsPSA[parameter == "chicken_income_effect", "Med"] <- rbeta(1, as.numeric(inputsPSA[parameter == "chicken_income_effect", "HIC param 1"]),
+                                                                    as.numeric(inputsPSA[parameter == "chicken_income_effect", "HIC param 2"]))
+  }
+  
+  r <- runif(1)
+  
+  if(r < 0.9){
+    inputsPSA[parameter == "pig_mort_effect", "Med"] <- -1 * rbeta(1, as.numeric(inputsPSA[parameter == "pig_mort_effect", "HIC param 1"]),
+                                                                   as.numeric(inputsPSA[parameter == "pig_mort_effect", "HIC param 2"]))
+  } else if (r >= 0.9){
+    inputsPSA[parameter == "pig_mort_effect", "Med"] <- rbeta(1, as.numeric(inputsPSA[parameter == "pig_mort_effect", "HIC param 1"]),
+                                                              as.numeric(inputsPSA[parameter == "pig_mort_effect", "HIC param 2"]))
+  }
+  
+  s <- runif(1)
+  
+  if(s < 0.9){
+    inputsPSA[parameter == "chicken_mort_effect", "Med"] <- -1 * rbeta(1, as.numeric(inputsPSA[parameter == "chicken_mort_effect", "HIC param 1"]),
+                                                                       as.numeric(inputsPSA[parameter == "chicken_mort_effect", "HIC param 2"]))
+  } else if (s >= 0.9){
+    inputsPSA[parameter == "chicken_mort_effect", "Med"] <- rbeta(1, as.numeric(inputsPSA[parameter == "chicken_mort_effect", "HIC param 1"]),
+                                                                  as.numeric(inputsPSA[parameter == "chicken_mort_effect", "HIC param 2"]))
+  }
   
   #store result in vector
   HIC_MC_Vector[i] <- as.data.frame(Model(inputsPSA, scenario_income, scenario_prod, scenario_transmission,scenario_farm_effect))[1,1]
@@ -1508,6 +1835,7 @@ dev.off()
 
 scenario_prod <- "HCA" 
 scenario_transmission <- "med"
+scenario_farm_effect <- "med"
 
 ###LIC
 
@@ -1525,8 +1853,10 @@ LIC_reg_matrix <- as.data.frame(LIC_reg_matrix)
 
 inputs_reg_LIC <- read.csv(here("inputs - general model.csv"))
 inputs_reg_LIC <- as.data.table(inputs_reg_LIC)
-colnames(inputs_reg_LIC) <- c("parameter", "description", "HIC", "MIC-I", "MIC-S", "LIC", "Value", "Min", "Lo", "Med", "Hi", "Max",
-                              "LIC min", "LIC max", "MIC min", "MIC max", "HIC min", "HIC max")
+colnames(inputs_reg_LIC) <- c("parameter", "description", "HIC", "MIC-I", "MIC-S", "LIC", "Value", "Min", "Lo", "Med", "Hi", "Max", 
+                              "LIC min", "LIC max", "MIC min", "MIC max", "HIC min", "HIC max",
+                              "Distribution", "LIC param 1", "LIC param 2", "MIC param 1", "MIC param 2",
+                              "HIC param 1", "HIC param 2")
 
 
 set.seed(42069)
@@ -1534,103 +1864,380 @@ set.seed(42069)
 for(i in 1:number_runs){
   inputsreg <- inputs_reg_LIC
   
-  for(j in c(3,5:12,15,17,19:20, 27:38, 42:60)){
-    
-    inputsreg[j,6] <- runif(1,as.numeric(inputsreg[j,13]),as.numeric(inputsreg[j,14]))
-    LIC_reg_matrix[i,j+1] <- inputsreg[j,6]
-    
+  inputsreg[parameter == "well_sick", "LIC"] <- rbeta(1, as.numeric(inputsreg[parameter == "well_sick", "LIC param 1"]), 
+                                                      as.numeric(inputsreg[parameter == "well_sick", "LIC param 2"]))
+  
+  LIC_reg_matrix[i, "well_sick"] <- inputsreg[parameter == "well_sick", "LIC"]
+  
+  inputsreg[parameter == "portion_res", "LIC"] <- rbeta(1, as.numeric(inputsreg[parameter == "portion_res", "LIC param 1"]), 
+                                                        as.numeric(inputsreg[parameter == "portion_res", "LIC param 2"]))
+  
+  LIC_reg_matrix[i, "portion_res"] <- inputsreg[parameter == "portion_res", "LIC"]
+  
+  inputsreg[parameter == "mort_res", "LIC"] <- 1.62 * rbeta(1,as.numeric(inputsreg[parameter == "mort_res", "LIC param 1"]), 
+                                                            as.numeric(inputsreg[parameter == "mort_res", "LIC param 2"]))
+  
+  LIC_reg_matrix[i, "mort_res"] <- inputsreg[parameter == "mort_res", "LIC"]
+  
+  inputsreg[parameter == "mort_sus", "LIC"] <- rbeta(1, as.numeric(inputsreg[parameter == "mort_sus", "LIC param 1"]), 
+                                                     as.numeric(inputsreg[parameter == "mort_sus", "LIC param 2"]))
+  
+  LIC_reg_matrix[i, "mort_sus"] <- inputsreg[parameter == "mort_sus", "LIC"]
+  
+  inputsreg[parameter == "los_sus", "LIC"] <- (1/365.25) * rlnorm(1, as.numeric(inputsreg[parameter == "los_sus", "LIC param 1"]), 
+                                                                  as.numeric(inputsreg[parameter == "los_sus", "LIC param 2"]))
+  
+  LIC_reg_matrix[i, "los_sus"] <- inputsreg[parameter == "los_sus", "LIC"]
+  
+  inputsreg[parameter == "los_res", "LIC"] <- (1.27/365.25) * rlnorm(1, as.numeric(inputsreg[parameter == "los_res", "LIC param 1"]), 
+                                                                     as.numeric(inputsreg[parameter == "los_res", "LIC param 2"]))
+  
+  LIC_reg_matrix[i, "los_res"] <- inputsreg[parameter == "los_res", "LIC"]
+  
+  inputsreg[parameter == "bed_day_cost", "LIC"] <- rlnorm(1, as.numeric(inputsreg[parameter == "bed_day_cost", "LIC param 1"]), 
+                                                          as.numeric(inputsreg[parameter == "bed_day_cost", "LIC param 2"]))
+  
+  LIC_reg_matrix[i, "bed_day_cost"] <- inputsreg[parameter == "bed_day_cost", "LIC"]
+  
+  inputsreg[parameter == "qol_sick", "LIC"] <- rbeta(1, as.numeric(inputsreg[parameter == "qol_sick", "LIC param 1"]), 
+                                                     as.numeric(inputsreg[parameter == "qol_sick", "LIC param 2"]))
+  
+  LIC_reg_matrix[i, "qol_sick"] <- inputsreg[parameter == "qol_sick", "LIC"]
+  
+  inputsreg[parameter == "qol_seq", "LIC"] <- rbeta(1, as.numeric(inputsreg[parameter == "qol_seq", "LIC param 1"]), 
+                                                    as.numeric(inputsreg[parameter == "qol_seq", "LIC param 2"]))
+  
+  LIC_reg_matrix[i, "qol_seq"] <- inputsreg[parameter == "qol_seq", "LIC"]
+  
+  inputsreg[parameter == "amr_grow", "LIC"] <- 0.01 * rgamma(1, as.numeric(inputsreg[parameter == "amr_grow", "LIC param 1"]), 
+                                                             scale = as.numeric(inputsreg[parameter == "amr_grow", "LIC param 2"]))
+  
+  LIC_reg_matrix[i, "amr_grow"] <- inputsreg[parameter == "amr_grow", "LIC"]
+  
+  inputsreg[parameter == "n_pigs", "LIC"] <- rlnorm(1, as.numeric(inputsreg[parameter == "n_pigs", "LIC param 1"]), 
+                                                    as.numeric(inputsreg[parameter == "n_pigs", "LIC param 2"]))
+  
+  LIC_reg_matrix[i, "n_pigs"] <- inputsreg[parameter == "n_pigs", "LIC"]
+  
+  inputsreg[parameter == "n_chickens", "LIC"] <- rlnorm(1, as.numeric(inputsreg[parameter == "n_chickens", "LIC param 1"]), 
+                                                        as.numeric(inputsreg[parameter == "n_chickens", "LIC param 2"]))
+  
+  LIC_reg_matrix[i, "n_chickens"] <- inputsreg[parameter == "n_chickens", "LIC"]
+  
+  inputsreg[parameter == "n_chickens_farm_ind", "LIC"] <- rlnorm(1, as.numeric(inputsreg[parameter == "n_chickens_farm_ind", "LIC param 1"]), 
+                                                                 as.numeric(inputsreg[parameter == "n_chickens_farm_ind", "LIC param 2"]))
+  
+  LIC_reg_matrix[i, "n_chickens_farm_ind"] <- inputsreg[parameter == "n_chickens_farm_ind", "LIC"]
+  
+  inputsreg[parameter == "n_chickens_farm_small", "LIC"] <- rlnorm(1, as.numeric(inputsreg[parameter == "n_chickens_farm_small", "LIC param 1"]), 
+                                                                   as.numeric(inputsreg[parameter == "n_chickens_farm_small", "LIC param 2"]))
+  
+  LIC_reg_matrix[i, "n_chickens_farm_small"] <- inputsreg[parameter == "n_chickens_farm_small", "LIC"]
+  
+  inputsreg[parameter == "n_pigs_farm_ind", "LIC"] <- rlnorm(1, as.numeric(inputsreg[parameter == "n_pigs_farm_ind", "LIC param 1"]), 
+                                                             as.numeric(inputsreg[parameter == "n_pigs_farm_ind", "LIC param 2"]))
+  
+  LIC_reg_matrix[i, "n_pigs_farm_ind"] <- inputsreg[parameter == "n_pigs_farm_ind", "LIC"]
+  
+  inputsreg[parameter == "n_pigs_farm_small", "LIC"] <- rlnorm(1, as.numeric(inputsreg[parameter == "n_pigs_farm_small", "LIC param 1"]), 
+                                                               as.numeric(inputsreg[parameter == "n_pigs_farm_small", "LIC param 2"]))
+  
+  LIC_reg_matrix[i, "n_pigs_farm_small"] <- inputsreg[parameter == "n_pigs_farm_small", "LIC"]
+  
+  inputsreg[parameter == "portion_animals_ind", "LIC"] <- rbeta(1, as.numeric(inputsreg[parameter == "portion_animals_ind", "LIC param 1"]), 
+                                                                as.numeric(inputsreg[parameter == "portion_animals_ind", "LIC param 2"]))
+  
+  LIC_reg_matrix[i, "portion_animals_ind"] <- inputsreg[parameter == "portion_animals_ind", "LIC"]
+  
+  inputsreg[parameter == "pig_price", "LIC"] <- rlnorm(1, as.numeric(inputsreg[parameter == "pig_price", "LIC param 1"]), 
+                                                       as.numeric(inputsreg[parameter == "pig_price", "LIC param 2"]))
+  
+  LIC_reg_matrix[i, "pig_price"] <- inputsreg[parameter == "pig_price", "LIC"]
+  
+  inputsreg[parameter == "chicken_price", "LIC"] <- rlnorm(1, as.numeric(inputsreg[parameter == "chicken_price", "LIC param 1"]), 
+                                                           as.numeric(inputsreg[parameter == "chicken_price", "LIC param 2"]))
+  
+  LIC_reg_matrix[i, "chicken_price"] <- inputsreg[parameter == "chicken_price", "LIC"]
+  
+  inputsreg[parameter == "c_mort_ind", "LIC"] <- rbeta(1, as.numeric(inputsreg[parameter == "c_mort_ind", "LIC param 1"]), 
+                                                       as.numeric(inputsreg[parameter == "c_mort_ind", "LIC param 2"]))
+  
+  LIC_reg_matrix[i, "c_mort_ind"] <- inputsreg[parameter == "c_mort_ind", "LIC"]
+  
+  inputsreg[parameter == "c_mort_small", "LIC"] <- rbeta(1, as.numeric(inputsreg[parameter == "c_mort_small", "LIC param 1"]), 
+                                                         as.numeric(inputsreg[parameter == "c_mort_small", "LIC param 2"]))
+  
+  LIC_reg_matrix[i, "c_mort_small"] <- inputsreg[parameter == "c_mort_small", "LIC"]
+  
+  inputsreg[parameter == "p_mort_ind", "LIC"] <- rbeta(1, as.numeric(inputsreg[parameter == "p_mort_ind", "LIC param 1"]), 
+                                                       as.numeric(inputsreg[parameter == "p_mort_ind", "LIC param 2"]))
+  
+  LIC_reg_matrix[i, "p_mort_ind"] <- inputsreg[parameter == "p_mort_ind", "LIC"]
+  
+  inputsreg[parameter == "p_mort_small", "LIC"] <- rbeta(1, as.numeric(inputsreg[parameter == "p_mort_small", "LIC param 1"]), 
+                                                         as.numeric(inputsreg[parameter == "p_mort_small", "LIC param 2"]))
+  
+  LIC_reg_matrix[i, "p_mort_small"] <- inputsreg[parameter == "p_mort_small", "LIC"]
+  
+  inputsreg[parameter == "res_change", "Med"] <- -1 * rbeta(1, as.numeric(inputsreg[parameter == "res_change", "LIC param 1"]), 
+                                                         as.numeric(inputsreg[parameter == "res_change", "LIC param 2"]))
+  
+  LIC_reg_matrix[i, "res_change"] <- inputsreg[parameter == "res_change", "Med"]
+  
+  q <- runif(1)
+  
+  if(q < 0.1){
+    inputsreg[parameter == "pig_income_effect", "Med"] <- -1 * rbeta(1, as.numeric(inputsreg[parameter == "pig_income_effect", "LIC param 1"]),
+                                                                     as.numeric(inputsreg[parameter == "pig_income_effect", "LIC param 2"]))
+  } else if (q >= 0.1){
+    inputsreg[parameter == "pig_income_effect", "Med"] <- rbeta(1, as.numeric(inputsreg[parameter == "pig_income_effect", "LIC param 1"]),
+                                                                as.numeric(inputsreg[parameter == "pig_income_effect", "LIC param 2"]))
   }
   
-  inputsreg[21,10] <- runif(1, as.numeric(inputsreg[21,14]), as.numeric(inputsreg[21,13]))
-  LIC_reg_matrix[i,22] <- inputsreg[21,10]
+  LIC_reg_matrix[i, "pig_income_effect"] <- inputsreg[parameter == "pig_income_effect", "Med"]
   
-  LIC_reg_matrix[i,1] <- as.data.frame(Model(inputsreg, scenario_income, scenario_prod, scenario_transmission, scenario_farm_effect))[1,1]
+  p <- runif(1)
+  
+  if(p < 0.1){
+    inputsreg[parameter == "chicken_income_effect", "Med"] <- -1 * rbeta(1, as.numeric(inputsreg[parameter == "chicken_income_effect", "LIC param 1"]),
+                                                                         as.numeric(inputsreg[parameter == "chicken_income_effect", "LIC param 2"]))
+  } else if (p >= 0.1){
+    inputsreg[parameter == "chicken_income_effect", "Med"] <- rbeta(1, as.numeric(inputsreg[parameter == "chicken_income_effect", "LIC param 1"]),
+                                                                    as.numeric(inputsreg[parameter == "chicken_income_effect", "LIC param 2"]))
+  }
+  
+  LIC_reg_matrix[i, "chicken_income_effect"] <- inputsreg[parameter == "chicken_income_effect", "Med"]
+  
+  r <- runif(1)
+  
+  if(r < 0.9){
+    inputsreg[parameter == "pig_mort_effect", "Med"] <- -1 * rbeta(1, as.numeric(inputsreg[parameter == "pig_mort_effect", "LIC param 1"]),
+                                                                   as.numeric(inputsreg[parameter == "pig_mort_effect", "LIC param 2"]))
+  } else if (r >= 0.9){
+    inputsPSA[parameter == "pig_mort_effect", "Med"] <- rbeta(1, as.numeric(inputsreg[parameter == "pig_mort_effect", "LIC param 1"]),
+                                                              as.numeric(inputsreg[parameter == "pig_mort_effect", "LIC param 2"]))
+  }
+  
+  LIC_reg_matrix[i, "pig_mort_effect"] <- inputsreg[parameter == "pig_mort_effect", "Med"]
+  
+  s <- runif(1)
+  
+  if(s < 0.9){
+    inputsreg[parameter == "chicken_mort_effect", "Med"] <- -1 * rbeta(1, as.numeric(inputsreg[parameter == "chicken_mort_effect", "LIC param 1"]),
+                                                                       as.numeric(inputsreg[parameter == "chicken_mort_effect", "LIC param 2"]))
+  } else if (s >= 0.9){
+    inputsreg[parameter == "chicken_mort_effect", "Med"] <- rbeta(1, as.numeric(inputsreg[parameter == "chicken_mort_effect", "LIC param 1"]),
+                                                                  as.numeric(inputsreg[parameter == "chicken_mort_effect", "LIC param 2"]))
+  }
+  
+  LIC_reg_matrix[i, "chicken_mort_effect"] <- inputsreg[parameter == "chicken_mort_effect", "Med"]
+  
+  LIC_reg_matrix[i, "Output"] <- as.data.frame(Model(inputsreg, scenario_income, scenario_prod, scenario_transmission, scenario_farm_effect))[1,1]
   
 }
 
 write.xlsx(LIC_reg_matrix, "Outputs/reg matrix LIC.xlsx")
 
-### MICI
-
-scenario_income <- "MIC-I"
-
-MICI_reg_matrix <- matrix(rep(0), nrow = number_runs, ncol = nrow(inputs_general)+1)
-
-colnames(MICI_reg_matrix) <- c("Output", rep(0, nrow(inputs_general)))
-
-for(i in 2:ncol(MICI_reg_matrix)){
-  colnames(MICI_reg_matrix)[i] <- inputs_general[i-1,1]
-}
-
-MICI_reg_matrix <- as.data.frame(MICI_reg_matrix)
-
-inputs_reg_MICI <- read.csv(here("inputs - general model.csv"))
-inputs_reg_MICI <- as.data.table(inputs_reg_MICI)
-colnames(inputs_reg_MICI) <- c("parameter", "description", "HIC", "MIC-I", "MIC-S", "LIC", "Value", "Min", "Lo", "Med", "Hi", "Max",
-                               "LIC min", "LIC max", "MIC min", "MIC max", "HIC min", "HIC max")
-
-
-set.seed(42069)
-
-for(i in 1:number_runs){
-  inputsreg <- inputs_reg_MICI
-  
-  for(j in c(3,5:12,15,17,19:20, 27:38, 42:60)){
-    
-    inputsreg[j,6] <- runif(1,as.numeric(inputsreg[j,13]),as.numeric(inputsreg[j,14]))
-    MICI_reg_matrix[i,j+1] <- inputsreg[j,6]
-    
-  }
-  
-  inputsreg[21,10] <- runif(1, as.numeric(inputsreg[21,14]), as.numeric(inputsreg[21,13]))
-  MICI_reg_matrix[i,22] <- inputsreg[21,10]
-  
-  MICI_reg_matrix[i,1] <- as.data.frame(Model(inputsreg, scenario_income, scenario_prod, scenario_transmission, scenario_farm_effect))[1,1]
-  
-}
-
-write.xlsx(MICI_reg_matrix, "Outputs/reg matrix MICI.xlsx")
-
-### MICS
+### MIC
 
 scenario_income <- "MIC-S"
 
-MICS_reg_matrix <- matrix(rep(0), nrow = number_runs, ncol = nrow(inputs_general)+1)
+MIC_reg_matrix <- matrix(rep(0), nrow = number_runs, ncol = nrow(inputs_general)+1)
 
-colnames(MICS_reg_matrix) <- c("Output", rep(0, nrow(inputs_general)))
+colnames(MIC_reg_matrix) <- c("Output", rep(0, nrow(inputs_general)))
 
-for(i in 2:ncol(MICS_reg_matrix)){
-  colnames(MICS_reg_matrix)[i] <- inputs_general[i-1,1]
+for(i in 2:ncol(MIC_reg_matrix)){
+  colnames(MIC_reg_matrix)[i] <- inputs_general[i-1,1]
 }
 
-MICS_reg_matrix <- as.data.frame(MICS_reg_matrix)
+MIC_reg_matrix <- as.data.frame(MIC_reg_matrix)
 
-inputs_reg_MICS <- read.csv(here("inputs - general model.csv"))
-inputs_reg_MICS <- as.data.table(inputs_reg_MICS)
-colnames(inputs_reg_MICS) <- c("parameter", "description", "HIC", "MIC-I", "MIC-S", "LIC", "Value", "Min", "Lo", "Med", "Hi", "Max",
-                               "LIC min", "LIC max", "MIC min", "MIC max", "HIC min", "HIC max")
+inputs_reg_MIC <- read.csv(here("inputs - general model.csv"))
+inputs_reg_MIC <- as.data.table(inputs_reg_MIC)
+colnames(inputs_reg_MIC) <- c("parameter", "description", "HIC", "MIC-I", "MIC-S", "LIC", "Value", "Min", "Lo", "Med", "Hi", "Max", 
+                               "LIC min", "LIC max", "MIC min", "MIC max", "HIC min", "HIC max",
+                               "Distribution", "LIC param 1", "LIC param 2", "MIC param 1", "MIC param 2",
+                               "HIC param 1", "HIC param 2")
 
 
 set.seed(42069)
 
 for(i in 1:number_runs){
-  inputsreg <- inputs_reg_MICS
+  inputsreg <- inputs_reg_MIC
   
-  for(j in c(3,5:12,15,17,19:20, 27:38, 42:60)){
-    
-    inputsreg[j,6] <- runif(1,as.numeric(inputsreg[j,13]),as.numeric(inputsreg[j,14]))
-    MICS_reg_matrix[i,j+1] <- inputsreg[j,6]
-    
+  inputsreg[parameter == "well_sick", "MIC"] <- rbeta(1, as.numeric(inputsreg[parameter == "well_sick", "MIC param 1"]), 
+                                                      as.numeric(inputsreg[parameter == "well_sick", "MIC param 2"]))
+  
+  MIC_reg_matrix[i, "well_sick"] <- inputsreg[parameter == "well_sick", "MIC"]
+  
+  inputsreg[parameter == "portion_res", "MIC"] <- rbeta(1, as.numeric(inputsreg[parameter == "portion_res", "MIC param 1"]), 
+                                                        as.numeric(inputsreg[parameter == "portion_res", "MIC param 2"]))
+  
+  MIC_reg_matrix[i, "portion_res"] <- inputsreg[parameter == "portion_res", "MIC"]
+  
+  inputsreg[parameter == "mort_res", "MIC"] <- 1.62 * rbeta(1,as.numeric(inputsreg[parameter == "mort_res", "MIC param 1"]), 
+                                                            as.numeric(inputsreg[parameter == "mort_res", "MIC param 2"]))
+  
+  MIC_reg_matrix[i, "mort_res"] <- inputsreg[parameter == "mort_res", "MIC"]
+  
+  inputsreg[parameter == "mort_sus", "MIC"] <- rbeta(1, as.numeric(inputsreg[parameter == "mort_sus", "MIC param 1"]), 
+                                                     as.numeric(inputsreg[parameter == "mort_sus", "MIC param 2"]))
+  
+  MIC_reg_matrix[i, "mort_sus"] <- inputsreg[parameter == "mort_sus", "MIC"]
+  
+  inputsreg[parameter == "los_sus", "MIC"] <- (1/365.25) * rlnorm(1, as.numeric(inputsreg[parameter == "los_sus", "MIC param 1"]), 
+                                                                  as.numeric(inputsreg[parameter == "los_sus", "MIC param 2"]))
+  
+  MIC_reg_matrix[i, "los_sus"] <- inputsreg[parameter == "los_sus", "MIC"]
+  
+  inputsreg[parameter == "los_res", "MIC"] <- (1.27/365.25) * rlnorm(1, as.numeric(inputsreg[parameter == "los_res", "MIC param 1"]), 
+                                                                     as.numeric(inputsreg[parameter == "los_res", "MIC param 2"]))
+  
+  MIC_reg_matrix[i, "los_res"] <- inputsreg[parameter == "los_res", "MIC"]
+  
+  inputsreg[parameter == "bed_day_cost", "MIC"] <- rlnorm(1, as.numeric(inputsreg[parameter == "bed_day_cost", "MIC param 1"]), 
+                                                          as.numeric(inputsreg[parameter == "bed_day_cost", "MIC param 2"]))
+  
+  MIC_reg_matrix[i, "bed_day_cost"] <- inputsreg[parameter == "bed_day_cost", "MIC"]
+  
+  inputsreg[parameter == "qol_sick", "MIC"] <- rbeta(1, as.numeric(inputsreg[parameter == "qol_sick", "MIC param 1"]), 
+                                                     as.numeric(inputsreg[parameter == "qol_sick", "MIC param 2"]))
+  
+  MIC_reg_matrix[i, "qol_sick"] <- inputsreg[parameter == "qol_sick", "MIC"]
+  
+  inputsreg[parameter == "qol_seq", "MIC"] <- rbeta(1, as.numeric(inputsreg[parameter == "qol_seq", "MIC param 1"]), 
+                                                    as.numeric(inputsreg[parameter == "qol_seq", "MIC param 2"]))
+  
+  MIC_reg_matrix[i, "qol_seq"] <- inputsreg[parameter == "qol_seq", "MIC"]
+  
+  inputsreg[parameter == "amr_grow", "MIC"] <- 0.01 * rgamma(1, as.numeric(inputsreg[parameter == "amr_grow", "MIC param 1"]), 
+                                                             scale = as.numeric(inputsreg[parameter == "amr_grow", "MIC param 2"]))
+  
+  MIC_reg_matrix[i, "amr_grow"] <- inputsreg[parameter == "amr_grow", "MIC"]
+  
+  inputsreg[parameter == "n_pigs", "MIC"] <- rlnorm(1, as.numeric(inputsreg[parameter == "n_pigs", "MIC param 1"]), 
+                                                    as.numeric(inputsreg[parameter == "n_pigs", "MIC param 2"]))
+  
+  MIC_reg_matrix[i, "n_pigs"] <- inputsreg[parameter == "n_pigs", "MIC"]
+  
+  inputsreg[parameter == "n_chickens", "MIC"] <- rlnorm(1, as.numeric(inputsreg[parameter == "n_chickens", "MIC param 1"]), 
+                                                        as.numeric(inputsreg[parameter == "n_chickens", "MIC param 2"]))
+  
+  MIC_reg_matrix[i, "n_chickens"] <- inputsreg[parameter == "n_chickens", "MIC"]
+  
+  inputsreg[parameter == "n_chickens_farm_ind", "MIC"] <- rlnorm(1, as.numeric(inputsreg[parameter == "n_chickens_farm_ind", "MIC param 1"]), 
+                                                                 as.numeric(inputsreg[parameter == "n_chickens_farm_ind", "MIC param 2"]))
+  
+  MIC_reg_matrix[i, "n_chickens_farm_ind"] <- inputsreg[parameter == "n_chickens_farm_ind", "MIC"]
+  
+  inputsreg[parameter == "n_chickens_farm_small", "MIC"] <- rlnorm(1, as.numeric(inputsreg[parameter == "n_chickens_farm_small", "MIC param 1"]), 
+                                                                   as.numeric(inputsreg[parameter == "n_chickens_farm_small", "MIC param 2"]))
+  
+  MIC_reg_matrix[i, "n_chickens_farm_small"] <- inputsreg[parameter == "n_chickens_farm_small", "MIC"]
+  
+  inputsreg[parameter == "n_pigs_farm_ind", "MIC"] <- rlnorm(1, as.numeric(inputsreg[parameter == "n_pigs_farm_ind", "MIC param 1"]), 
+                                                             as.numeric(inputsreg[parameter == "n_pigs_farm_ind", "MIC param 2"]))
+  
+  MIC_reg_matrix[i, "n_pigs_farm_ind"] <- inputsreg[parameter == "n_pigs_farm_ind", "MIC"]
+  
+  inputsreg[parameter == "n_pigs_farm_small", "MIC"] <- rlnorm(1, as.numeric(inputsreg[parameter == "n_pigs_farm_small", "MIC param 1"]), 
+                                                               as.numeric(inputsreg[parameter == "n_pigs_farm_small", "MIC param 2"]))
+  
+  MIC_reg_matrix[i, "n_pigs_farm_small"] <- inputsreg[parameter == "n_pigs_farm_small", "MIC"]
+  
+  inputsreg[parameter == "portion_animals_ind", "MIC"] <- rbeta(1, as.numeric(inputsreg[parameter == "portion_animals_ind", "MIC param 1"]), 
+                                                                as.numeric(inputsreg[parameter == "portion_animals_ind", "MIC param 2"]))
+  
+  MIC_reg_matrix[i, "portion_animals_ind"] <- inputsreg[parameter == "portion_animals_ind", "MIC"]
+  
+  inputsreg[parameter == "pig_price", "MIC"] <- rlnorm(1, as.numeric(inputsreg[parameter == "pig_price", "MIC param 1"]), 
+                                                       as.numeric(inputsreg[parameter == "pig_price", "MIC param 2"]))
+  
+  MIC_reg_matrix[i, "pig_price"] <- inputsreg[parameter == "pig_price", "MIC"]
+  
+  inputsreg[parameter == "chicken_price", "MIC"] <- rlnorm(1, as.numeric(inputsreg[parameter == "chicken_price", "MIC param 1"]), 
+                                                           as.numeric(inputsreg[parameter == "chicken_price", "MIC param 2"]))
+  
+  MIC_reg_matrix[i, "chicken_price"] <- inputsreg[parameter == "chicken_price", "MIC"]
+  
+  inputsreg[parameter == "c_mort_ind", "MIC"] <- rbeta(1, as.numeric(inputsreg[parameter == "c_mort_ind", "MIC param 1"]), 
+                                                       as.numeric(inputsreg[parameter == "c_mort_ind", "MIC param 2"]))
+  
+  MIC_reg_matrix[i, "c_mort_ind"] <- inputsreg[parameter == "c_mort_ind", "MIC"]
+  
+  inputsreg[parameter == "c_mort_small", "MIC"] <- rbeta(1, as.numeric(inputsreg[parameter == "c_mort_small", "MIC param 1"]), 
+                                                         as.numeric(inputsreg[parameter == "c_mort_small", "MIC param 2"]))
+  
+  MIC_reg_matrix[i, "c_mort_small"] <- inputsreg[parameter == "c_mort_small", "MIC"]
+  
+  inputsreg[parameter == "p_mort_ind", "MIC"] <- rbeta(1, as.numeric(inputsreg[parameter == "p_mort_ind", "MIC param 1"]), 
+                                                       as.numeric(inputsreg[parameter == "p_mort_ind", "MIC param 2"]))
+  
+  MIC_reg_matrix[i, "p_mort_ind"] <- inputsreg[parameter == "p_mort_ind", "MIC"]
+  
+  inputsreg[parameter == "p_mort_small", "MIC"] <- rbeta(1, as.numeric(inputsreg[parameter == "p_mort_small", "MIC param 1"]), 
+                                                         as.numeric(inputsreg[parameter == "p_mort_small", "MIC param 2"]))
+  
+  MIC_reg_matrix[i, "p_mort_small"] <- inputsreg[parameter == "p_mort_small", "MIC"]
+  
+  inputsreg[parameter == "res_change", "Med"] <- -1 * rbeta(1, as.numeric(inputsreg[parameter == "res_change", "MIC param 1"]), 
+                                                            as.numeric(inputsreg[parameter == "res_change", "MIC param 2"]))
+  
+  MIC_reg_matrix[i, "res_change"] <- inputsreg[parameter == "res_change", "Med"]
+  
+  q <- runif(1)
+  
+  if(q < 0.1){
+    inputsreg[parameter == "pig_income_effect", "Med"] <- -1 * rbeta(1, as.numeric(inputsreg[parameter == "pig_income_effect", "MIC param 1"]),
+                                                                     as.numeric(inputsreg[parameter == "pig_income_effect", "MIC param 2"]))
+  } else if (q >= 0.1){
+    inputsreg[parameter == "pig_income_effect", "Med"] <- rbeta(1, as.numeric(inputsreg[parameter == "pig_income_effect", "MIC param 1"]),
+                                                                as.numeric(inputsreg[parameter == "pig_income_effect", "MIC param 2"]))
   }
   
-  inputsreg[21,10] <- runif(1, as.numeric(inputsreg[21,14]), as.numeric(inputsreg[21,13]))
-  MICS_reg_matrix[i,22] <- inputsreg[21,10]
+  MIC_reg_matrix[i, "pig_income_effect"] <- inputsreg[parameter == "pig_income_effect", "Med"]
   
-  MICS_reg_matrix[i,1] <- as.data.frame(Model(inputsreg, scenario_income, scenario_prod, scenario_transmission, scenario_farm_effect))[1,1]
+  p <- runif(1)
+  
+  if(p < 0.1){
+    inputsreg[parameter == "chicken_income_effect", "Med"] <- -1 * rbeta(1, as.numeric(inputsreg[parameter == "chicken_income_effect", "MIC param 1"]),
+                                                                         as.numeric(inputsreg[parameter == "chicken_income_effect", "MIC param 2"]))
+  } else if (p >= 0.1){
+    inputsreg[parameter == "chicken_income_effect", "Med"] <- rbeta(1, as.numeric(inputsreg[parameter == "chicken_income_effect", "MIC param 1"]),
+                                                                    as.numeric(inputsreg[parameter == "chicken_income_effect", "MIC param 2"]))
+  }
+  
+  MIC_reg_matrix[i, "chicken_income_effect"] <- inputsreg[parameter == "chicken_income_effect", "Med"]
+  
+  r <- runif(1)
+  
+  if(r < 0.9){
+    inputsreg[parameter == "pig_mort_effect", "Med"] <- -1 * rbeta(1, as.numeric(inputsreg[parameter == "pig_mort_effect", "MIC param 1"]),
+                                                                   as.numeric(inputsreg[parameter == "pig_mort_effect", "MIC param 2"]))
+  } else if (r >= 0.9){
+    inputsPSA[parameter == "pig_mort_effect", "Med"] <- rbeta(1, as.numeric(inputsreg[parameter == "pig_mort_effect", "MIC param 1"]),
+                                                              as.numeric(inputsreg[parameter == "pig_mort_effect", "MIC param 2"]))
+  }
+  
+  MIC_reg_matrix[i, "pig_mort_effect"] <- inputsreg[parameter == "pig_mort_effect", "Med"]
+  
+  s <- runif(1)
+  
+  if(s < 0.9){
+    inputsreg[parameter == "chicken_mort_effect", "Med"] <- -1 * rbeta(1, as.numeric(inputsreg[parameter == "chicken_mort_effect", "MIC param 1"]),
+                                                                       as.numeric(inputsreg[parameter == "chicken_mort_effect", "MIC param 2"]))
+  } else if (s >= 0.9){
+    inputsreg[parameter == "chicken_mort_effect", "Med"] <- rbeta(1, as.numeric(inputsreg[parameter == "chicken_mort_effect", "MIC param 1"]),
+                                                                  as.numeric(inputsreg[parameter == "chicken_mort_effect", "MIC param 2"]))
+  }
+  
+  MIC_reg_matrix[i, "chicken_mort_effect"] <- inputsreg[parameter == "chicken_mort_effect", "Med"]
+  
+  MIC_reg_matrix[i, "Output"] <- as.data.frame(Model(inputsreg, scenario_income, scenario_prod, scenario_transmission, scenario_farm_effect))[1,1]
   
 }
 
-write.xlsx(MICS_reg_matrix, "Outputs/reg matrix MICS.xlsx")
+write.xlsx(MIC_reg_matrix, "Outputs/reg matrix MIC.xlsx")
 
 ###HIC
 
@@ -1648,8 +2255,10 @@ HIC_reg_matrix <- as.data.frame(HIC_reg_matrix)
 
 inputs_reg_HIC <- read.csv(here("inputs - general model.csv"))
 inputs_reg_HIC <- as.data.table(inputs_reg_HIC)
-colnames(inputs_reg_HIC) <- c("parameter", "description", "HIC", "MIC-I", "MIC-S", "LIC", "Value", "Min", "Lo", "Med", "Hi", "Max",
-                              "LIC min", "LIC max", "MIC min", "MIC max", "HIC min", "HIC max")
+colnames(inputs_reg_HIC) <- c("parameter", "description", "HIC", "MIC-I", "MIC-S", "LIC", "Value", "Min", "Lo", "Med", "Hi", "Max", 
+                              "LIC min", "LIC max", "MIC min", "MIC max", "HIC min", "HIC max",
+                              "Distribution", "LIC param 1", "LIC param 2", "MIC param 1", "MIC param 2",
+                              "HIC param 1", "HIC param 2")
 
 
 set.seed(42069)
@@ -1657,17 +2266,175 @@ set.seed(42069)
 for(i in 1:number_runs){
   inputsreg <- inputs_reg_HIC
   
-  for(j in c(3,5:12,15,17,19:20, 27:38, 42:60)){
-    
-    inputsreg[j,6] <- runif(1,as.numeric(inputsreg[j,13]),as.numeric(inputsreg[j,14]))
-    HIC_reg_matrix[i,j+1] <- inputsreg[j,6]
-    
+  inputsreg[parameter == "well_sick", "HIC"] <- rbeta(1, as.numeric(inputsreg[parameter == "well_sick", "HIC param 1"]), 
+                                                      as.numeric(inputsreg[parameter == "well_sick", "HIC param 2"]))
+  
+  HIC_reg_matrix[i, "well_sick"] <- inputsreg[parameter == "well_sick", "HIC"]
+  
+  inputsreg[parameter == "portion_res", "HIC"] <- rbeta(1, as.numeric(inputsreg[parameter == "portion_res", "HIC param 1"]), 
+                                                        as.numeric(inputsreg[parameter == "portion_res", "HIC param 2"]))
+  
+  HIC_reg_matrix[i, "portion_res"] <- inputsreg[parameter == "portion_res", "HIC"]
+  
+  inputsreg[parameter == "mort_res", "HIC"] <- 1.62 * rbeta(1,as.numeric(inputsreg[parameter == "mort_res", "HIC param 1"]), 
+                                                            as.numeric(inputsreg[parameter == "mort_res", "HIC param 2"]))
+  
+  HIC_reg_matrix[i, "mort_res"] <- inputsreg[parameter == "mort_res", "HIC"]
+  
+  inputsreg[parameter == "mort_sus", "HIC"] <- rbeta(1, as.numeric(inputsreg[parameter == "mort_sus", "HIC param 1"]), 
+                                                     as.numeric(inputsreg[parameter == "mort_sus", "HIC param 2"]))
+  
+  HIC_reg_matrix[i, "mort_sus"] <- inputsreg[parameter == "mort_sus", "HIC"]
+  
+  inputsreg[parameter == "los_sus", "HIC"] <- (1/365.25) * rlnorm(1, as.numeric(inputsreg[parameter == "los_sus", "HIC param 1"]), 
+                                                                  as.numeric(inputsreg[parameter == "los_sus", "HIC param 2"]))
+  
+  HIC_reg_matrix[i, "los_sus"] <- inputsreg[parameter == "los_sus", "HIC"]
+  
+  inputsreg[parameter == "los_res", "HIC"] <- (1.27/365.25) * rlnorm(1, as.numeric(inputsreg[parameter == "los_res", "HIC param 1"]), 
+                                                                     as.numeric(inputsreg[parameter == "los_res", "HIC param 2"]))
+  
+  HIC_reg_matrix[i, "los_res"] <- inputsreg[parameter == "los_res", "HIC"]
+  
+  inputsreg[parameter == "bed_day_cost", "HIC"] <- rlnorm(1, as.numeric(inputsreg[parameter == "bed_day_cost", "HIC param 1"]), 
+                                                          as.numeric(inputsreg[parameter == "bed_day_cost", "HIC param 2"]))
+  
+  HIC_reg_matrix[i, "bed_day_cost"] <- inputsreg[parameter == "bed_day_cost", "HIC"]
+  
+  inputsreg[parameter == "qol_sick", "HIC"] <- rbeta(1, as.numeric(inputsreg[parameter == "qol_sick", "HIC param 1"]), 
+                                                     as.numeric(inputsreg[parameter == "qol_sick", "HIC param 2"]))
+  
+  HIC_reg_matrix[i, "qol_sick"] <- inputsreg[parameter == "qol_sick", "HIC"]
+  
+  inputsreg[parameter == "qol_seq", "HIC"] <- rbeta(1, as.numeric(inputsreg[parameter == "qol_seq", "HIC param 1"]), 
+                                                    as.numeric(inputsreg[parameter == "qol_seq", "HIC param 2"]))
+  
+  HIC_reg_matrix[i, "qol_seq"] <- inputsreg[parameter == "qol_seq", "HIC"]
+  
+  inputsreg[parameter == "amr_grow", "HIC"] <- 0.01 * rgamma(1, as.numeric(inputsreg[parameter == "amr_grow", "HIC param 1"]), 
+                                                             scale = as.numeric(inputsreg[parameter == "amr_grow", "HIC param 2"]))
+  
+  HIC_reg_matrix[i, "amr_grow"] <- inputsreg[parameter == "amr_grow", "HIC"]
+  
+  inputsreg[parameter == "n_pigs", "HIC"] <- rlnorm(1, as.numeric(inputsreg[parameter == "n_pigs", "HIC param 1"]), 
+                                                    as.numeric(inputsreg[parameter == "n_pigs", "HIC param 2"]))
+  
+  HIC_reg_matrix[i, "n_pigs"] <- inputsreg[parameter == "n_pigs", "HIC"]
+  
+  inputsreg[parameter == "n_chickens", "HIC"] <- rlnorm(1, as.numeric(inputsreg[parameter == "n_chickens", "HIC param 1"]), 
+                                                        as.numeric(inputsreg[parameter == "n_chickens", "HIC param 2"]))
+  
+  HIC_reg_matrix[i, "n_chickens"] <- inputsreg[parameter == "n_chickens", "HIC"]
+  
+  inputsreg[parameter == "n_chickens_farm_ind", "HIC"] <- rlnorm(1, as.numeric(inputsreg[parameter == "n_chickens_farm_ind", "HIC param 1"]), 
+                                                                 as.numeric(inputsreg[parameter == "n_chickens_farm_ind", "HIC param 2"]))
+  
+  HIC_reg_matrix[i, "n_chickens_farm_ind"] <- inputsreg[parameter == "n_chickens_farm_ind", "HIC"]
+  
+  inputsreg[parameter == "n_chickens_farm_small", "HIC"] <- rlnorm(1, as.numeric(inputsreg[parameter == "n_chickens_farm_small", "HIC param 1"]), 
+                                                                   as.numeric(inputsreg[parameter == "n_chickens_farm_small", "HIC param 2"]))
+  
+  HIC_reg_matrix[i, "n_chickens_farm_small"] <- inputsreg[parameter == "n_chickens_farm_small", "HIC"]
+  
+  inputsreg[parameter == "n_pigs_farm_ind", "HIC"] <- rlnorm(1, as.numeric(inputsreg[parameter == "n_pigs_farm_ind", "HIC param 1"]), 
+                                                             as.numeric(inputsreg[parameter == "n_pigs_farm_ind", "HIC param 2"]))
+  
+  HIC_reg_matrix[i, "n_pigs_farm_ind"] <- inputsreg[parameter == "n_pigs_farm_ind", "HIC"]
+  
+  inputsreg[parameter == "n_pigs_farm_small", "HIC"] <- rlnorm(1, as.numeric(inputsreg[parameter == "n_pigs_farm_small", "HIC param 1"]), 
+                                                               as.numeric(inputsreg[parameter == "n_pigs_farm_small", "HIC param 2"]))
+  
+  HIC_reg_matrix[i, "n_pigs_farm_small"] <- inputsreg[parameter == "n_pigs_farm_small", "HIC"]
+  
+  inputsreg[parameter == "portion_animals_ind", "HIC"] <- rbeta(1, as.numeric(inputsreg[parameter == "portion_animals_ind", "HIC param 1"]), 
+                                                                as.numeric(inputsreg[parameter == "portion_animals_ind", "HIC param 2"]))
+  
+  HIC_reg_matrix[i, "portion_animals_ind"] <- inputsreg[parameter == "portion_animals_ind", "HIC"]
+  
+  inputsreg[parameter == "pig_price", "HIC"] <- rlnorm(1, as.numeric(inputsreg[parameter == "pig_price", "HIC param 1"]), 
+                                                       as.numeric(inputsreg[parameter == "pig_price", "HIC param 2"]))
+  
+  HIC_reg_matrix[i, "pig_price"] <- inputsreg[parameter == "pig_price", "HIC"]
+  
+  inputsreg[parameter == "chicken_price", "HIC"] <- rlnorm(1, as.numeric(inputsreg[parameter == "chicken_price", "HIC param 1"]), 
+                                                           as.numeric(inputsreg[parameter == "chicken_price", "HIC param 2"]))
+  
+  HIC_reg_matrix[i, "chicken_price"] <- inputsreg[parameter == "chicken_price", "HIC"]
+  
+  inputsreg[parameter == "c_mort_ind", "HIC"] <- rbeta(1, as.numeric(inputsreg[parameter == "c_mort_ind", "HIC param 1"]), 
+                                                       as.numeric(inputsreg[parameter == "c_mort_ind", "HIC param 2"]))
+  
+  HIC_reg_matrix[i, "c_mort_ind"] <- inputsreg[parameter == "c_mort_ind", "HIC"]
+  
+  inputsreg[parameter == "c_mort_small", "HIC"] <- rbeta(1, as.numeric(inputsreg[parameter == "c_mort_small", "HIC param 1"]), 
+                                                         as.numeric(inputsreg[parameter == "c_mort_small", "HIC param 2"]))
+  
+  HIC_reg_matrix[i, "c_mort_small"] <- inputsreg[parameter == "c_mort_small", "HIC"]
+  
+  inputsreg[parameter == "p_mort_ind", "HIC"] <- rbeta(1, as.numeric(inputsreg[parameter == "p_mort_ind", "HIC param 1"]), 
+                                                       as.numeric(inputsreg[parameter == "p_mort_ind", "HIC param 2"]))
+  
+  HIC_reg_matrix[i, "p_mort_ind"] <- inputsreg[parameter == "p_mort_ind", "HIC"]
+  
+  inputsreg[parameter == "p_mort_small", "HIC"] <- rbeta(1, as.numeric(inputsreg[parameter == "p_mort_small", "HIC param 1"]), 
+                                                         as.numeric(inputsreg[parameter == "p_mort_small", "HIC param 2"]))
+  
+  HIC_reg_matrix[i, "p_mort_small"] <- inputsreg[parameter == "p_mort_small", "HIC"]
+  
+  inputsreg[parameter == "res_change", "Med"] <- -1 * rbeta(1, as.numeric(inputsreg[parameter == "res_change", "HIC param 1"]), 
+                                                            as.numeric(inputsreg[parameter == "res_change", "HIC param 2"]))
+  
+  HIC_reg_matrix[i, "res_change"] <- inputsreg[parameter == "res_change", "Med"]
+  
+  q <- runif(1)
+  
+  if(q < 0.1){
+    inputsreg[parameter == "pig_income_effect", "Med"] <- -1 * rbeta(1, as.numeric(inputsreg[parameter == "pig_income_effect", "HIC param 1"]),
+                                                                     as.numeric(inputsreg[parameter == "pig_income_effect", "HIC param 2"]))
+  } else if (q >= 0.1){
+    inputsreg[parameter == "pig_income_effect", "Med"] <- rbeta(1, as.numeric(inputsreg[parameter == "pig_income_effect", "HIC param 1"]),
+                                                                as.numeric(inputsreg[parameter == "pig_income_effect", "HIC param 2"]))
   }
   
-  inputsreg[21,10] <- runif(1, as.numeric(inputsreg[21,14]), as.numeric(inputsreg[21,13]))
-  HIC_reg_matrix[i,22] <- inputsreg[21,10]
+  HIC_reg_matrix[i, "pig_income_effect"] <- inputsreg[parameter == "pig_income_effect", "Med"]
   
-  HIC_reg_matrix[i,1] <- as.data.frame(Model(inputs_general, scenario_income, scenario_prod, scenario_transmission, scenario_farm_effect))[1,1]
+  p <- runif(1)
+  
+  if(p < 0.1){
+    inputsreg[parameter == "chicken_income_effect", "Med"] <- -1 * rbeta(1, as.numeric(inputsreg[parameter == "chicken_income_effect", "HIC param 1"]),
+                                                                         as.numeric(inputsreg[parameter == "chicken_income_effect", "HIC param 2"]))
+  } else if (p >= 0.1){
+    inputsreg[parameter == "chicken_income_effect", "Med"] <- rbeta(1, as.numeric(inputsreg[parameter == "chicken_income_effect", "MIC param 1"]),
+                                                                    as.numeric(inputsreg[parameter == "chicken_income_effect", "MIC param 2"]))
+  }
+  
+  HIC_reg_matrix[i, "chicken_income_effect"] <- inputsreg[parameter == "chicken_income_effect", "Med"]
+  
+  r <- runif(1)
+  
+  if(r < 0.9){
+    inputsreg[parameter == "pig_mort_effect", "Med"] <- -1 * rbeta(1, as.numeric(inputsreg[parameter == "pig_mort_effect", "HIC param 1"]),
+                                                                   as.numeric(inputsreg[parameter == "pig_mort_effect", "HIC param 2"]))
+  } else if (r >= 0.9){
+    inputsPSA[parameter == "pig_mort_effect", "Med"] <- rbeta(1, as.numeric(inputsreg[parameter == "pig_mort_effect", "HIC param 1"]),
+                                                              as.numeric(inputsreg[parameter == "pig_mort_effect", "HIC param 2"]))
+  }
+  
+  HIC_reg_matrix[i, "pig_mort_effect"] <- inputsreg[parameter == "pig_mort_effect", "Med"]
+  
+  s <- runif(1)
+  
+  if(s < 0.9){
+    inputsreg[parameter == "chicken_mort_effect", "Med"] <- -1 * rbeta(1, as.numeric(inputsreg[parameter == "chicken_mort_effect", "HIC param 1"]),
+                                                                       as.numeric(inputsreg[parameter == "chicken_mort_effect", "HIC param 2"]))
+  } else if (s >= 0.9){
+    inputsreg[parameter == "chicken_mort_effect", "Med"] <- rbeta(1, as.numeric(inputsreg[parameter == "chicken_mort_effect", "HIC param 1"]),
+                                                                  as.numeric(inputsreg[parameter == "chicken_mort_effect", "HIC param 2"]))
+  }
+  
+  HIC_reg_matrix[i, "chicken_mort_effect"] <- inputsreg[parameter == "chicken_mort_effect", "Med"]
+  
+  HIC_reg_matrix[i, "Output"] <- as.data.frame(Model(inputsreg, scenario_income, scenario_prod, scenario_transmission, scenario_farm_effect))[1,1]
   
 }
 
@@ -1675,193 +2442,134 @@ write.xlsx(HIC_reg_matrix, "Outputs/reg matrix HIC.xlsx")
 
 ##regressions 
 
-#'Human parameters to include in the plots: human AMR effect, discount rate, 
-#'AMR growth, WTP, LFPR, background sickness, background AMR
+#'Human parameters to include in the plots:
 
-#'Animal parameters to include: pig income effect, chicken income effect, 
-#'farm size (x4), number of pigs, number of chickens
+#'Animal parameters to include:
 
 ###HIC
 
-HIC_reg <- lm(Output ~ res_change + dr + amr_grow + wtp +
-                lfpr + well_sick + portion_res + 
-                pig_income_effect + chicken_income_effect +
-                n_chickens_farm_ind + n_chickens_farm_small +
-                n_pigs_farm_ind + n_pigs_farm_small + 
-                n_pigs + n_chickens, data = HIC_reg_matrix)
+HIC_reg <- lm(Output ~ pig_income_effect + chicken_income_effect + pig_mort_effect +
+                chicken_mort_effect + res_change + well_sick + portion_res + mort_res +
+                mort_sus + los_sus + los_res + bed_day_cost + qol_sick + qol_seq +
+                amr_grow + n_pigs + n_chickens + n_chickens_farm_ind + n_chickens_farm_small +
+                n_pigs_farm_ind + n_pigs_farm_small + portion_animals_ind, data = HIC_reg_matrix)
 
 stargazer(HIC_reg, type = "text") 
-#' only the LFPR and the effect on human AMR
-#' significant after controlling for everything
+#'significant: pig and chicken income effects, affect on human AMR, disease incidence,
+#'background AMR prevalence, mortality from resistant infection (pos), mortality from
+#'susceptible infection (neg), QoL from sequelae (only significant at 10%)
 
-rsq.partial(HIC_reg) #effect on human AMR dominates
+rsq.partial(HIC_reg) #
 
-HIC_reg_constrained <- lm(Output ~ dr + amr_grow + wtp +
-                            lfpr + well_sick + portion_res + 
-                            pig_income_effect + chicken_income_effect +
-                            n_chickens_farm_ind + n_chickens_farm_small +
-                            n_pigs_farm_ind + n_pigs_farm_small + 
-                            n_pigs + n_chickens, data = HIC_reg_matrix)
+HIC_prsq <- rsq.partial(HIC_reg)
 
-stargazer(HIC_reg_constrained, type = "text") 
-#'dr and LFPR significant
+HIC_prsq_var <- as.vector(HIC_prsq$variable)
+HIC_prsq_val <- as.vector(HIC_prsq$partial.rsq)
 
-rsq.partial(HIC_reg_constrained)
+barplot(HIC_prsq_val,
+        names.arg = HIC_prsq_var,
+        main = "Partial R^2")
 
-HIC_prsq <- rsq.partial(HIC_reg_constrained)
+HIC_prsq_val2 <- c(HIC_prsq_val[2], HIC_prsq_val[5], HIC_prsq_val[7], HIC_prsq_val[1],
+                  HIC_prsq_val[6], HIC_prsq_val[8])
 
-HIC_prsq_var <- HIC_prsq$variable
-HIC_prsq_val <- HIC_prsq$partial.rsq
+# HIC_prsq_var2 <- c(HIC_prsq_var[2], HIC_prsq_var[5], HIC_prsq_var[7], HIC_prsq_var[1],
+#                    HIC_prsq_var[6], HIC_prsq_var[8])
 
-HIC_prsq <- as.data.frame(cbind(HIC_prsq_var, HIC_prsq_val))
+HIC_prsq_var2 <- c("effect on chicken productivity", "change in human AMR", "background AMR prevalence",
+                   "effect on pig productivity", "disease incidence", "mortality from resistant infections")
 
 jpeg("Outputs/Table 2 A.jpg")
 
-HIC_prsq %>%
-  mutate(HIC_prsq_var = fct_reorder(HIC_prsq_var, HIC_prsq_val)) %>%
-  ggplot( aes(x = HIC_prsq_var, y = HIC_prsq_val)) +
-  geom_bar(stat = "identity", fill="#f68060", alpha=.6, width=.4) +
-  xlab("Parameter") +
-  ylab("Partial R^2")+
-  ggtitle("Portion of Variation in Output Caused by Each Parameter (Excluding
-          the Effect on Human AMR) - HIC")
+barplot(HIC_prsq_val2,
+        names.arg = HIC_prsq_var2,
+        main = "Portion of Variation in Cost-Effectiveness Explained by Variation in Each Parameter - HICs")
 
 dev.off()
 
-###MIC-I
+#'chicken income effect, then change in human AMR, then background AMR,
+#'then pig income effect, then disease incidence, then mortality from resistant
+#'infections
 
-MICI_reg <- lm(Output ~ res_change + dr + amr_grow + wtp +
-                 lfpr + well_sick + portion_res + 
-                 pig_income_effect + chicken_income_effect +
-                 n_chickens_farm_ind + n_chickens_farm_small +
-                 n_pigs_farm_ind + n_pigs_farm_small + 
-                 n_pigs + n_chickens, data = MICI_reg_matrix)
 
-stargazer(MICI_reg, type = "text") 
-#'again, only lfpr and the effect on human AMR
+###MIC
 
-rsq.partial(MICI_reg) #again, effect on human AMR dominates
+MIC_reg <- lm(Output ~ pig_income_effect + chicken_income_effect + pig_mort_effect +
+                           chicken_mort_effect + res_change + well_sick + portion_res + mort_res +
+                           mort_sus + los_sus + los_res + bed_day_cost + qol_sick + qol_seq +
+                           amr_grow + n_pigs + n_chickens + n_chickens_farm_ind + n_chickens_farm_small +
+                           n_pigs_farm_ind + n_pigs_farm_small + portion_animals_ind, data = MIC_reg_matrix)
 
-MICI_reg_constrained <- lm(Output ~ dr + amr_grow + wtp +
-                             lfpr + well_sick + portion_res + 
-                             pig_income_effect + chicken_income_effect +
-                             n_chickens_farm_ind + n_chickens_farm_small +
-                             n_pigs_farm_ind + n_pigs_farm_small + 
-                             n_pigs + n_chickens, data = MICI_reg_matrix)
+stargazer(MIC_reg, type = "text") 
+#'significant: pig and chicken income effects, change in human AMR, 
+#'QoL from sequelae (10%), number of chickens in smallholder farms (10%)
 
-stargazer(MICI_reg_constrained, type = "text") 
-#'again, dr and LFPR significant
+rsq.partial(MIC_reg) #
 
-rsq.partial(MICI_reg_constrained)
+MIC_prsq <- rsq.partial(MIC_reg)
 
-MICI_prsq <- rsq.partial(MICI_reg_constrained)
+MIC_prsq_var <- MIC_prsq$variable
+MIC_prsq_val <- MIC_prsq$partial.rsq
 
-MICI_prsq_var <- MICI_prsq$variable
-MICI_prsq_val <- MICI_prsq$partial.rsq
+barplot(MIC_prsq_val,
+        names.arg = MIC_prsq_var,
+        main = "Portion of Variation in Cost-Effectiveness Explained by Variation in Each Parameter - MICs")
 
-MICI_prsq <- as.data.frame(cbind(MICI_prsq_var, MICI_prsq_val))
+MIC_prsq_val2 <- c(MIC_prsq_val[5], MIC_prsq_val[2], MIC_prsq_val[1])
+MIC_prsq_var2 <- c("Effect on Human AMR", "Effect on Chicken Productivity",
+                   "Effect on Pig Productivity")
 
 jpeg("Outputs/Table 2 B.jpg")
 
-MICI_prsq %>%
-  mutate(MICI_prsq_var = fct_reorder(MICI_prsq_var, MICI_prsq_val)) %>%
-  ggplot( aes(x = MICI_prsq_var, y = MICI_prsq_val)) +
-  geom_bar(stat = "identity", fill="#f68060", alpha=.6, width=.4) +
-  xlab("Parameter") +
-  ylab("Partial R^2")+
-  ggtitle("Portion of Variation in Output Caused by Each Parameter (Excluding
-          the Effect on Human AMR) - MIC-I")
+barplot(MIC_prsq_val2,
+        names.arg = MIC_prsq_var2,
+        main = "Portion of Variation in Cost-Effectiveness Explained by Variation in Each Parameter - MICs")
 
 dev.off()
 
-###MIC-S
-
-MICS_reg <- lm(Output ~ res_change + dr + amr_grow + wtp +
-                 lfpr + well_sick + portion_res + 
-                 pig_income_effect + chicken_income_effect +
-                 n_chickens_farm_ind + n_chickens_farm_small +
-                 n_pigs_farm_ind + n_pigs_farm_small + 
-                 n_pigs + n_chickens, data = MICS_reg_matrix)
-
-stargazer(MICS_reg, type = "text") 
-#'again, only lfpr and the effect on human AMR
-
-rsq.partial(MICS_reg) #again, effect on human AMR dominates
-
-MICS_reg_constrained <- lm(Output ~ dr + amr_grow + wtp +
-                             lfpr + well_sick + portion_res + 
-                             pig_income_effect + chicken_income_effect +
-                             n_chickens_farm_ind + n_chickens_farm_small +
-                             n_pigs_farm_ind + n_pigs_farm_small + 
-                             n_pigs + n_chickens, data = MICS_reg_matrix)
-
-stargazer(MICS_reg_constrained, type = "text") 
-#'again, dr and LFPR significant
-
-rsq.partial(MICS_reg_constrained)
-
-MICS_prsq <- rsq.partial(MICS_reg_constrained)
-
-MICS_prsq_var <- MICS_prsq$variable
-MICS_prsq_val <- MICS_prsq$partial.rsq
-
-MICS_prsq <- as.data.frame(cbind(MICS_prsq_var, MICS_prsq_val))
-
-jpeg("Outputs/Table 2 C.jpg")
-
-MICS_prsq %>%
-  mutate(MICS_prsq_var = fct_reorder(MICS_prsq_var, MICS_prsq_val)) %>%
-  ggplot( aes(x = MICS_prsq_var, y = MICS_prsq_val)) +
-  geom_bar(stat = "identity", fill="#f68060", alpha=.6, width=.4) +
-  xlab("Parameter") +
-  ylab("Partial R^2")+
-  ggtitle("Portion of Variation in Output Caused by Each Parameter (Excluding
-          the Effect on Human AMR) - MIC-S")
-
-dev.off()
+#'Effect on human AMR, then effect on chicken productivity, then effect on pig
+#'productivity, were similarly important and completely dominated
 
 ###LIC
 
-LIC_reg <- lm(Output ~ res_change + dr + amr_grow + wtp +
-                lfpr + well_sick + portion_res + 
-                pig_income_effect + chicken_income_effect +
-                n_chickens_farm_ind + n_chickens_farm_small +
-                n_pigs_farm_ind + n_pigs_farm_small + 
-                n_pigs + n_chickens, data = LIC_reg_matrix)
+LIC_reg <- lm(Output ~ pig_income_effect + chicken_income_effect + pig_mort_effect +
+                chicken_mort_effect + res_change + well_sick + portion_res + mort_res +
+                mort_sus + los_sus + los_res + bed_day_cost + qol_sick + qol_seq +
+                amr_grow + n_pigs + n_chickens + n_chickens_farm_ind + n_chickens_farm_small +
+                n_pigs_farm_ind + n_pigs_farm_small + portion_animals_ind, data = LIC_reg_matrix)
 
 stargazer(LIC_reg, type = "text") 
-#'effect on human AMR, the discount rate, the AMR growth rate, the LFPR,
-#'the chance of illness all significant
+#'Significant: pig and chicken income effects, effect on human AMR, background disease prevalence,
+#'background AMR prevalence, mortality from resistant infections (positive), 
+#'mortality from susceptible infections (negative), QoL from sickness, number of chickens,
+#'number of pigs (10%), number of pigs on a small farm (positive, 10%), 
+#'number of pigs on an industrial farm (negstive, 10%), number of pigs on a small farm (positive),
+#'portion of animals in industrial farms (positive)
 
-rsq.partial(LIC_reg) #effect on human AMR does not dominate
+rsq.partial(LIC_reg) 
+#'big ones were pig and chicken income effect, background sickness, effect on human AMR,
+#'mortality from resistant infections, and portion of animals in industrial farms
 
-# LIC_reg_constrained <- lm(Output ~ dr + amr_grow + wtp +
-#                             lfpr + well_sick + portion_res + 
-#                             pig_income_effect + chicken_income_effect +
-#                             n_chickens_farm_ind + n_chickens_farm_small +
-#                             n_pigs_farm_ind + n_pigs_farm_small + 
-#                             n_pigs + n_chickens, data = LIC_reg_matrix)
-
-#' stargazer(LIC_reg_constrained, type = "text") 
-#' #'again, dr and LFPR significant
-
-LIC_prsq <- rsq.partial(LIC_reg)
+LIC_prsq <- rsq.partial(LIC_reg) 
 
 LIC_prsq_var <- LIC_prsq$variable
 LIC_prsq_val <- LIC_prsq$partial.rsq
 
-LIC_prsq <- as.data.frame(cbind(LIC_prsq_var, LIC_prsq_val))
+barplot(LIC_prsq_val,
+        names.arg = LIC_prsq_var,
+        main = "Portion of Variation in Cost-Effectiveness Explained by Variation in Each Parameter - LICs")
 
-jpeg("Outputs/Table 2 D.jpg")
+LIC_prsq_val2 <- c(LIC_prsq_val[2], LIC_prsq_val[5], LIC_prsq_val[1], LIC_prsq_val[8],
+                   LIC_prsq_val[6], LIC_prsq_val[22])
+LIC_prsq_var2 <- c("Effect on Chicken Productivity", "Effect on Human AMR", "Effect on Pig Productivity",
+                   "Mortality from Resistant Infections", "Background Disease Prevalence",
+                   "Portion of Animals in Industrial Farms")
 
-LIC_prsq %>%
-  mutate(LIC_prsq_var = fct_reorder(LIC_prsq_var, LIC_prsq_val)) %>%
-  ggplot( aes(x = LIC_prsq_var, y = LIC_prsq_val)) +
-  geom_bar(stat = "identity", fill="#f68060", alpha=.6, width=.4) +
-  xlab("Parameter") +
-  ylab("Partial R^2")+
-  ggtitle("Portion of Variation in Output Caused by Each Parameter (Including
-          the Effect on Human AMR) - LIC")
+jpeg("Outputs/Table 2 C.jpg")
+
+barplot(LIC_prsq_val2,
+        names.arg = LIC_prsq_var2,
+        main = "Portion of Variation in Cost-Effectiveness Explained by Variation in Each Parameter - LICs")
 
 dev.off()
 
@@ -1932,39 +2640,34 @@ table_4[4,2] <- as.numeric(Model_Case_Study(inputs_casestudy, scenario_income, s
 
 write.xlsx(table_4, "Outputs/Table 4.xlsx")
 
-
-
 # Figure 4 - composition of NMB in default scenario (case study) ----------
 
-scenario <- "HCA"
+scenario_prod <- "HCA"
 scenario_amr_grow <- "med"
 scenario_intervention_level <- "Village"
 scenario_outcomes <- "All"
 intervention_followup_period <- 2
 scenario_transmission <- "med"
+scenario_income <- "Viet Nam"
+scenario_farm_effect <- "med"
 
 counts <- rep(0,5)
 
-counts[1] <- as.numeric(Model_Case_Study(inputs_casestudy, scenario_income, scenario_prod, scenario_transmission,scenario_farm_effect)[1,3])
-counts[2] <- as.numeric(Model_Case_Study(inputs_casestudy, scenario_income, scenario_prod, scenario_transmission,scenario_farm_effect)[1,4])
-counts[3] <- as.numeric(Model_Case_Study(inputs_casestudy, scenario_income, scenario_prod, scenario_transmission,scenario_farm_effect)[1,5])
-counts[4] <- as.numeric(Model_Case_Study(inputs_casestudy, scenario_income, scenario_prod, scenario_transmission,scenario_farm_effect)[1,6])
-counts[5] <- as.numeric(-1 * Model_Case_Study(inputs_casestudy, scenario_income, scenario_prod, scenario_transmission,scenario_farm_effect)[1,7])
+counts[1] <- as.numeric(Model_Case_Study(inputs_casestudy, scenario_income, scenario_prod, scenario_transmission,scenario_farm_effect)[1, "Increased Profit - Chicken Farms"])
+counts[2] <- as.numeric(Model_Case_Study(inputs_casestudy, scenario_income, scenario_prod, scenario_transmission,scenario_farm_effect)[1, "Increased Profit - Pig Farms"])
+counts[3] <- as.numeric(Model_Case_Study(inputs_casestudy, scenario_income, scenario_prod, scenario_transmission,scenario_farm_effect)[1, "Value of Productivity Gained"])
+counts[4] <- as.numeric(Model_Case_Study(inputs_casestudy, scenario_income, scenario_prod, scenario_transmission,scenario_farm_effect)[1, "Cost Saved for Healthcare"]) +
+  as.numeric(Model_Case_Study(inputs_casestudy, scenario_income, scenario_prod, scenario_transmission,scenario_farm_effect)[1, "Value of DALYs Averted"])
+counts[5] <- as.numeric(-1 * Model_Case_Study(inputs_casestudy, scenario_income, scenario_prod, scenario_transmission,scenario_farm_effect)[1, "Implementation Cost"])
 
 counts <- counts / 1000000000
 
-names <- c("Healthcare (incl. QALYs saved", "Productivity", "Poultry Sector",
-           "Pig Sector", "Implementation Cost")
-
-
-fig4_matrix <- as.data.frame(cbind(names, counts))
+names <- c("Poultry Sector", "Pig Sector", "Productivity", "Healthcare (incl. QALYs saved)", "Implementation Cost")
 
 jpeg("Outputs/Figure 4.jpg")
 
-fig4_matrix %>%
-  mutate(names = fct_reorder(names, counts)) %>%
-  ggplot(aes(x = names, y = counts)) +
-  geom_bar(position = "identity", stat = "identity", fill="#f68060", alpha=.6, width=.4) +
-  ggtitle("Contribution to Overall Net Monetary Benefit in Default Scenario, bn $USD")
+barplot(counts,
+        names.arg = names,
+        main = "Contribution to Net Monetary Benefit ($bn USD)")
 
 dev.off()
