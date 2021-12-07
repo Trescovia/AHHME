@@ -27,6 +27,11 @@ library("forcats")
 
 # Data files --------------------------------------------------------------
 
+main_dir <- here()
+sub_dir <- "Outputs"
+ifelse(!dir.exists(file.path(main_dir, sub_dir)), dir.create(file.path(main_dir, sub_dir)), F)
+rm("main_dir", "sub_dir")
+
 inputs_general <- read.csv(here("inputs - general model.csv"))
 inputs_general <- as.data.table(inputs_general)
 colnames(inputs_general) <- c("parameter", "description", "HIC", "MIC-I", "MIC-S", "LIC", "Value", "Min", "Lo", "Med", "Hi", "Max", 
@@ -396,6 +401,12 @@ for(i in 1:number_runs){
   inputsPSA[parameter == "res_change", "Med"] <- -1 * rbeta(1, as.numeric(inputsPSA[parameter == "res_change", "LIC param 1"]), 
                                                             as.numeric(inputsPSA[parameter == "res_change", "LIC param 2"]))
   
+  inputsPSA[parameter == "s_seq", "LIC"] <- 2.3791717 * rbeta(1, as.numeric(inputsPSA[parameter == "s_seq", "LIC param 1"]), 
+                                                            as.numeric(inputsPSA[parameter == "s_seq", "LIC param 2"]))
+  
+  inputsPSA[parameter == "r_seq", "LIC"] <- 3.85425815 * rbeta(1, as.numeric(inputsPSA[parameter == "r_seq", "LIC param 1"]), 
+                                                              as.numeric(inputsPSA[parameter == "r_seq", "LIC param 2"]))
+  
   q <- runif(1)
   
   if(q < 0.1){
@@ -546,6 +557,12 @@ for(i in 1:number_runs){
   inputsPSA[parameter == "res_change", "Med"] <- -1 * rbeta(1, as.numeric(inputsPSA[parameter == "res_change", "MIC param 1"]), 
                                                             as.numeric(inputsPSA[parameter == "res_change", "MIC param 2"]))
   
+  inputsPSA[parameter == "s_seq", "MIC-S"] <- 1.54158796 * rbeta(1, as.numeric(inputsPSA[parameter == "s_seq", "MIC param 1"]), 
+                                                              as.numeric(inputsPSA[parameter == "s_seq", "MIC param 2"]))
+  
+  inputsPSA[parameter == "r_seq", "MIC-S"] <- 2.4973725 * rbeta(1, as.numeric(inputsPSA[parameter == "r_seq", "MIC param 1"]), 
+                                                               as.numeric(inputsPSA[parameter == "r_seq", "MIC param 2"]))
+  
   q <- runif(1)
   
   if(q < 0.1){
@@ -694,6 +711,12 @@ for(i in 1:number_runs){
   
   inputsPSA[parameter == "res_change", "Med"] <- -1 * rbeta(1, as.numeric(inputsPSA[parameter == "res_change", "HIC param 1"]), 
                                                             as.numeric(inputsPSA[parameter == "res_change", "HIC param 2"]))
+  
+  inputsPSA[parameter == "s_seq", "HIC"] <- rbeta(1, as.numeric(inputsPSA[parameter == "s_seq", "HIC param 1"]), 
+                                                                 as.numeric(inputsPSA[parameter == "s_seq", "HIC param 2"]))
+  
+  inputsPSA[parameter == "r_seq", "HIC"] <- 1.62 * rbeta(1, as.numeric(inputsPSA[parameter == "r_seq", "HIC param 1"]), 
+                                                                as.numeric(inputsPSA[parameter == "r_seq", "HIC param 2"]))
   
   q <- runif(1)
   
@@ -1984,6 +2007,16 @@ for(i in 1:number_runs){
   
   LIC_reg_matrix[i, "res_change"] <- inputsreg[parameter == "res_change", "Med"]
   
+  inputsreg[parameter == "s_seq", "LIC"] <- 2.3791717 * rbeta(1, as.numeric(inputsreg[parameter == "s_seq", "LIC param 1"]), 
+                                                               as.numeric(inputsreg[parameter == "s_seq", "LIC param 2"]))
+  
+  LIC_reg_matrix[i, "s_seq"] <- inputsreg[parameter == "s_seq", "LIC"]
+  
+  inputsreg[parameter == "r_seq", "LIC"] <- 3.85425815 * rbeta(1, as.numeric(inputsreg[parameter == "r_seq", "LIC param 1"]), 
+                                                              as.numeric(inputsreg[parameter == "r_seq", "LIC param 2"]))
+  
+  LIC_reg_matrix[i, "r_seq"] <- inputsreg[parameter == "r_seq", "LIC"]
+  
   q <- runif(1)
   
   if(q < 0.1){
@@ -2185,6 +2218,16 @@ for(i in 1:number_runs){
   
   MIC_reg_matrix[i, "res_change"] <- inputsreg[parameter == "res_change", "Med"]
   
+  inputsreg[parameter == "s_seq", "MIC"] <- 1.54158796 * rbeta(1, as.numeric(inputsreg[parameter == "s_seq", "MIC param 1"]), 
+                                                  as.numeric(inputsreg[parameter == "s_seq", "MIC param 2"]))
+  
+  MIC_reg_matrix[i, "s_seq"] <- inputsreg[parameter == "s_seq", "MIC"]
+  
+  inputsreg[parameter == "r_seq", "MIC"] <- 2.4973725 * rbeta(1, as.numeric(inputsreg[parameter == "r_seq", "MIC param 1"]), 
+                                                         as.numeric(inputsreg[parameter == "r_seq", "MIC param 2"]))
+  
+  MIC_reg_matrix[i, "r_seq"] <- inputsreg[parameter == "r_seq", "MIC"]
+  
   q <- runif(1)
   
   if(q < 0.1){
@@ -2385,6 +2428,16 @@ for(i in 1:number_runs){
                                                             as.numeric(inputsreg[parameter == "res_change", "HIC param 2"]))
   
   HIC_reg_matrix[i, "res_change"] <- inputsreg[parameter == "res_change", "Med"]
+  
+  inputsreg[parameter == "s_seq", "HIC"] <- rbeta(1, as.numeric(inputsreg[parameter == "s_seq", "HIC param 1"]), 
+                                                  as.numeric(inputsreg[parameter == "s_seq", "HIC param 2"]))
+  
+  HIC_reg_matrix[i, "s_seq"] <- inputsreg[parameter == "s_seq", "HIC"]
+  
+  inputsreg[parameter == "r_seq", "HIC"] <- 1.62 * rbeta(1, as.numeric(inputsreg[parameter == "r_seq", "HIC param 1"]), 
+                                                  as.numeric(inputsreg[parameter == "r_seq", "HIC param 2"]))
+  
+  HIC_reg_matrix[i, "r_seq"] <- inputsreg[parameter == "r_seq", "HIC"]
   
   q <- runif(1)
   
