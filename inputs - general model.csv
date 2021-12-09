@@ -4,7 +4,7 @@ n.t,number of periods in the model,20,20,20,20,,,,,,,,,,,,,,,,,,,
 dr,discount rate,0.029,0.068,0.068,0.043,,,,,,,-0.116347508,0.105380782,-0.091287746,0.110163868,-0.024925478,0.134175072,,,,,,,
 pop,country population,100000000,100000000,100000000,100000000,,,,,,,,,,,,,,,,,,,
 pop_growth,annual population growth rate,0.003443516,0.006578764,0.006578764,0.02120725,,,,,,,0.012,0.038,-0.017,0.034,-0.016,0.041,,,,,,,
-wtp,"willingness to pay for one quality-adjusted life year (QALY), international $USD",26449.67,2206.707,2206.707,160.18,,,,,,,100,527,238,8883,5777,108025,,,,,,,
+wtp,"willingness to pay for one quality-adjusted life year (QALY), international $USD",25340,2450,2450,220,,,,,,,100,527,238,8883,5777,108025,,,,,,,
 prod_growth,annual productivity growth rate,0.01379446,0.04131553,0.04131553,0.02359892,,,,,,,-0.09024822,0.06812913,-0.07234839,0.07154562,-0.02494677,0.08869648,,,,,,,
 transport_cost,cost of transport to/from seminars and farm visits (international $USD),20,10,10,5,,,,,,,2.5,7.5,5,15,10,30,,,,,,,
 hourly_wage,compensation given to farmers and vet professionals for attending seminars and farm visits (international $USD),31.98,4.89,4.89,1.15,,,,,,,17.78,99.13,2.44,44.46,0.5,3,,,,,,,
@@ -29,8 +29,8 @@ well_sick,chance of developing a BSI in a given year,0.002029572,0.006753598,0.0
 portion_res,portion of BSIs from resistant bacteria,0.0451,0.106864,0.106864,0.106864,,,,,,,0.061069254,0.090331604,0.061069254,0.090331604,0.007633657,0.064886082,beta,58.82916,491.64083,58.82916,491.64083,3.059945,64.80796
 mort_res,mortality from BSI with res bacteria,0.250847442,0.407421738,0.407421738,0.574156026,,,,,,,0.23153526,0.81790722,0.2056023,0.9357606,0.20165274,0.49420368,1.62 * beta,8.483491,635.831784,16.16834,48.09834,35.20625,192.16882
 mort_sus,mortality from BSI with sus bacteria,0.1548441,0.2514949,0.2514949,0.3544173,,,,,,,0.142923,0.504881,0.126915,0.57763,0.124477,0.305064,beta,8.483491,635.831784,16.16834,48.09834,35.20625,192.16882
-seq_sus,chance of developing sequelae following a BSI with susceptible bacteria,0.152,0.23432137,0.23432137,0.361634098,,,,,,,0.121364782,0.428725765,0.107771397,0.490501453,0.10570114,0.25904876,,,,,,,
-seq_res,chance of developing sequelae following a BSI with resistant bacteria,0.24624,0.379600619,0.379600619,0.585847239,,,,,,,0.196610947,0.694535739,0.174589663,0.794612354,0.171235847,0.419658991,,,,,,,
+seq_sus,chance of developing sequelae following a BSI with susceptible bacteria,0.152,0.23432137,0.23432137,0.361634098,,,,,,,0.121364782,0.428725765,0.107771397,0.490501453,0.10570114,0.25904876,"beta for HIC, 1.54158796 * beta for MIC, 2.3791717 * beta for LIC",3.5849,20,3.5849,20,3.5849,20
+seq_res,chance of developing sequelae following a BSI with resistant bacteria,0.24624,0.379600619,0.379600619,0.585847239,,,,,,,0.196610947,0.694535739,0.174589663,0.794612354,0.171235847,0.419658991,"1.62 * beta for HIC, 2.4973725 * beta for MIC, 3.85425815 * beta for LIC",3.5849,20,3.5849,20,3.5849,20
 los_sus,Hospital LoS from sus infection (years),0.01227,0.01227,0.01227,0.01227,,,,,,,0.016071184,0.031594798,0.016071184,0.031594798,0.016071184,0.031594798,(1/365.25) * lnorm,1,1,1,1,1,1
 los_res,Hospital LoS from res infection (years),0.01559,0.01559,0.01559,0.01559,,,,,,,0.020410404,0.040125394,0.020410404,0.040125394,0.020410404,0.040125394,(1.27/365.25) * lnorm,1,1,1,1,1,1
 bed_day_cost,cost of a single day in hospital,627.543312,39.73242,39.73242,6.232739,,,,,,,5.874616,28.0971487,18.3208492,243.34637,139.520606,901.603491,lnorm,1.257771,0.925305,3.2110302,0.9573006,6.324308,0.5410926

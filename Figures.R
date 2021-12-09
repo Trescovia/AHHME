@@ -401,11 +401,11 @@ for(i in 1:number_runs){
   inputsPSA[parameter == "res_change", "Med"] <- -1 * rbeta(1, as.numeric(inputsPSA[parameter == "res_change", "LIC param 1"]), 
                                                             as.numeric(inputsPSA[parameter == "res_change", "LIC param 2"]))
   
-  inputsPSA[parameter == "s_seq", "LIC"] <- 2.3791717 * rbeta(1, as.numeric(inputsPSA[parameter == "s_seq", "LIC param 1"]), 
-                                                            as.numeric(inputsPSA[parameter == "s_seq", "LIC param 2"]))
+  inputsPSA[parameter == "seq_sus", "LIC"] <- 2.3791717 * rbeta(1, as.numeric(inputsPSA[parameter == "seq_sus", "LIC param 1"]), 
+                                                            as.numeric(inputsPSA[parameter == "seq_sus", "LIC param 2"]))
   
-  inputsPSA[parameter == "r_seq", "LIC"] <- 3.85425815 * rbeta(1, as.numeric(inputsPSA[parameter == "r_seq", "LIC param 1"]), 
-                                                              as.numeric(inputsPSA[parameter == "r_seq", "LIC param 2"]))
+  inputsPSA[parameter == "seq_res", "LIC"] <- 3.85425815 * rbeta(1, as.numeric(inputsPSA[parameter == "seq_res", "LIC param 1"]), 
+                                                              as.numeric(inputsPSA[parameter == "seq_res", "LIC param 2"]))
   
   q <- runif(1)
   
@@ -557,11 +557,11 @@ for(i in 1:number_runs){
   inputsPSA[parameter == "res_change", "Med"] <- -1 * rbeta(1, as.numeric(inputsPSA[parameter == "res_change", "MIC param 1"]), 
                                                             as.numeric(inputsPSA[parameter == "res_change", "MIC param 2"]))
   
-  inputsPSA[parameter == "s_seq", "MIC-S"] <- 1.54158796 * rbeta(1, as.numeric(inputsPSA[parameter == "s_seq", "MIC param 1"]), 
-                                                              as.numeric(inputsPSA[parameter == "s_seq", "MIC param 2"]))
+  inputsPSA[parameter == "seq_sus", "MIC-S"] <- 1.54158796 * rbeta(1, as.numeric(inputsPSA[parameter == "seq_sus", "MIC param 1"]), 
+                                                              as.numeric(inputsPSA[parameter == "seq_sus", "MIC param 2"]))
   
-  inputsPSA[parameter == "r_seq", "MIC-S"] <- 2.4973725 * rbeta(1, as.numeric(inputsPSA[parameter == "r_seq", "MIC param 1"]), 
-                                                               as.numeric(inputsPSA[parameter == "r_seq", "MIC param 2"]))
+  inputsPSA[parameter == "seq_res", "MIC-S"] <- 2.4973725 * rbeta(1, as.numeric(inputsPSA[parameter == "seq_res", "MIC param 1"]), 
+                                                               as.numeric(inputsPSA[parameter == "seq_res", "MIC param 2"]))
   
   q <- runif(1)
   
@@ -712,11 +712,11 @@ for(i in 1:number_runs){
   inputsPSA[parameter == "res_change", "Med"] <- -1 * rbeta(1, as.numeric(inputsPSA[parameter == "res_change", "HIC param 1"]), 
                                                             as.numeric(inputsPSA[parameter == "res_change", "HIC param 2"]))
   
-  inputsPSA[parameter == "s_seq", "HIC"] <- rbeta(1, as.numeric(inputsPSA[parameter == "s_seq", "HIC param 1"]), 
-                                                                 as.numeric(inputsPSA[parameter == "s_seq", "HIC param 2"]))
+  inputsPSA[parameter == "seq_sus", "HIC"] <- rbeta(1, as.numeric(inputsPSA[parameter == "seq_sus", "HIC param 1"]), 
+                                                                 as.numeric(inputsPSA[parameter == "seq_sus", "HIC param 2"]))
   
-  inputsPSA[parameter == "r_seq", "HIC"] <- 1.62 * rbeta(1, as.numeric(inputsPSA[parameter == "r_seq", "HIC param 1"]), 
-                                                                as.numeric(inputsPSA[parameter == "r_seq", "HIC param 2"]))
+  inputsPSA[parameter == "seq_res", "HIC"] <- 1.62 * rbeta(1, as.numeric(inputsPSA[parameter == "seq_res", "HIC param 1"]), 
+                                                                as.numeric(inputsPSA[parameter == "seq_res", "HIC param 2"]))
   
   q <- runif(1)
   
@@ -2007,15 +2007,15 @@ for(i in 1:number_runs){
   
   LIC_reg_matrix[i, "res_change"] <- inputsreg[parameter == "res_change", "Med"]
   
-  inputsreg[parameter == "s_seq", "LIC"] <- 2.3791717 * rbeta(1, as.numeric(inputsreg[parameter == "s_seq", "LIC param 1"]), 
-                                                               as.numeric(inputsreg[parameter == "s_seq", "LIC param 2"]))
+  inputsreg[parameter == "seq_sus", "LIC"] <- 2.3791717 * rbeta(1, as.numeric(inputsreg[parameter == "seq_sus", "LIC param 1"]), 
+                                                               as.numeric(inputsreg[parameter == "seq_sus", "LIC param 2"]))
   
-  LIC_reg_matrix[i, "s_seq"] <- inputsreg[parameter == "s_seq", "LIC"]
+  LIC_reg_matrix[i, "seq_sus"] <- inputsreg[parameter == "seq_sus", "LIC"]
   
-  inputsreg[parameter == "r_seq", "LIC"] <- 3.85425815 * rbeta(1, as.numeric(inputsreg[parameter == "r_seq", "LIC param 1"]), 
-                                                              as.numeric(inputsreg[parameter == "r_seq", "LIC param 2"]))
+  inputsreg[parameter == "seq_res", "LIC"] <- 3.85425815 * rbeta(1, as.numeric(inputsreg[parameter == "seq_res", "LIC param 1"]), 
+                                                              as.numeric(inputsreg[parameter == "seq_res", "LIC param 2"]))
   
-  LIC_reg_matrix[i, "r_seq"] <- inputsreg[parameter == "r_seq", "LIC"]
+  LIC_reg_matrix[i, "seq_res"] <- inputsreg[parameter == "seq_res", "LIC"]
   
   q <- runif(1)
   
@@ -2047,7 +2047,7 @@ for(i in 1:number_runs){
     inputsreg[parameter == "pig_mort_effect", "Med"] <- -1 * rbeta(1, as.numeric(inputsreg[parameter == "pig_mort_effect", "LIC param 1"]),
                                                                    as.numeric(inputsreg[parameter == "pig_mort_effect", "LIC param 2"]))
   } else if (r >= 0.9){
-    inputsPSA[parameter == "pig_mort_effect", "Med"] <- rbeta(1, as.numeric(inputsreg[parameter == "pig_mort_effect", "LIC param 1"]),
+    inputsreg[parameter == "pig_mort_effect", "Med"] <- rbeta(1, as.numeric(inputsreg[parameter == "pig_mort_effect", "LIC param 1"]),
                                                               as.numeric(inputsreg[parameter == "pig_mort_effect", "LIC param 2"]))
   }
   
@@ -2218,15 +2218,15 @@ for(i in 1:number_runs){
   
   MIC_reg_matrix[i, "res_change"] <- inputsreg[parameter == "res_change", "Med"]
   
-  inputsreg[parameter == "s_seq", "MIC"] <- 1.54158796 * rbeta(1, as.numeric(inputsreg[parameter == "s_seq", "MIC param 1"]), 
-                                                  as.numeric(inputsreg[parameter == "s_seq", "MIC param 2"]))
+  inputsreg[parameter == "seq_sus", "MIC"] <- 1.54158796 * rbeta(1, as.numeric(inputsreg[parameter == "seq_sus", "MIC param 1"]), 
+                                                  as.numeric(inputsreg[parameter == "seq_sus", "MIC param 2"]))
   
-  MIC_reg_matrix[i, "s_seq"] <- inputsreg[parameter == "s_seq", "MIC"]
+  MIC_reg_matrix[i, "seq_sus"] <- inputsreg[parameter == "seq_sus", "MIC"]
   
-  inputsreg[parameter == "r_seq", "MIC"] <- 2.4973725 * rbeta(1, as.numeric(inputsreg[parameter == "r_seq", "MIC param 1"]), 
-                                                         as.numeric(inputsreg[parameter == "r_seq", "MIC param 2"]))
+  inputsreg[parameter == "seq_res", "MIC"] <- 2.4973725 * rbeta(1, as.numeric(inputsreg[parameter == "seq_res", "MIC param 1"]), 
+                                                         as.numeric(inputsreg[parameter == "seq_res", "MIC param 2"]))
   
-  MIC_reg_matrix[i, "r_seq"] <- inputsreg[parameter == "r_seq", "MIC"]
+  MIC_reg_matrix[i, "seq_res"] <- inputsreg[parameter == "seq_res", "MIC"]
   
   q <- runif(1)
   
@@ -2258,7 +2258,7 @@ for(i in 1:number_runs){
     inputsreg[parameter == "pig_mort_effect", "Med"] <- -1 * rbeta(1, as.numeric(inputsreg[parameter == "pig_mort_effect", "MIC param 1"]),
                                                                    as.numeric(inputsreg[parameter == "pig_mort_effect", "MIC param 2"]))
   } else if (r >= 0.9){
-    inputsPSA[parameter == "pig_mort_effect", "Med"] <- rbeta(1, as.numeric(inputsreg[parameter == "pig_mort_effect", "MIC param 1"]),
+    inputsreg[parameter == "pig_mort_effect", "Med"] <- rbeta(1, as.numeric(inputsreg[parameter == "pig_mort_effect", "MIC param 1"]),
                                                               as.numeric(inputsreg[parameter == "pig_mort_effect", "MIC param 2"]))
   }
   
@@ -2429,15 +2429,15 @@ for(i in 1:number_runs){
   
   HIC_reg_matrix[i, "res_change"] <- inputsreg[parameter == "res_change", "Med"]
   
-  inputsreg[parameter == "s_seq", "HIC"] <- rbeta(1, as.numeric(inputsreg[parameter == "s_seq", "HIC param 1"]), 
-                                                  as.numeric(inputsreg[parameter == "s_seq", "HIC param 2"]))
+  inputsreg[parameter == "seq_sus", "HIC"] <- rbeta(1, as.numeric(inputsreg[parameter == "seq_sus", "HIC param 1"]), 
+                                                  as.numeric(inputsreg[parameter == "seq_sus", "HIC param 2"]))
   
-  HIC_reg_matrix[i, "s_seq"] <- inputsreg[parameter == "s_seq", "HIC"]
+  HIC_reg_matrix[i, "seq_sus"] <- inputsreg[parameter == "seq_sus", "HIC"]
   
-  inputsreg[parameter == "r_seq", "HIC"] <- 1.62 * rbeta(1, as.numeric(inputsreg[parameter == "r_seq", "HIC param 1"]), 
-                                                  as.numeric(inputsreg[parameter == "r_seq", "HIC param 2"]))
+  inputsreg[parameter == "seq_res", "HIC"] <- 1.62 * rbeta(1, as.numeric(inputsreg[parameter == "seq_res", "HIC param 1"]), 
+                                                  as.numeric(inputsreg[parameter == "seq_res", "HIC param 2"]))
   
-  HIC_reg_matrix[i, "r_seq"] <- inputsreg[parameter == "r_seq", "HIC"]
+  HIC_reg_matrix[i, "seq_res"] <- inputsreg[parameter == "seq_res", "HIC"]
   
   q <- runif(1)
   
@@ -2469,7 +2469,7 @@ for(i in 1:number_runs){
     inputsreg[parameter == "pig_mort_effect", "Med"] <- -1 * rbeta(1, as.numeric(inputsreg[parameter == "pig_mort_effect", "HIC param 1"]),
                                                                    as.numeric(inputsreg[parameter == "pig_mort_effect", "HIC param 2"]))
   } else if (r >= 0.9){
-    inputsPSA[parameter == "pig_mort_effect", "Med"] <- rbeta(1, as.numeric(inputsreg[parameter == "pig_mort_effect", "HIC param 1"]),
+    inputsreg[parameter == "pig_mort_effect", "Med"] <- rbeta(1, as.numeric(inputsreg[parameter == "pig_mort_effect", "HIC param 1"]),
                                                               as.numeric(inputsreg[parameter == "pig_mort_effect", "HIC param 2"]))
   }
   
@@ -2509,8 +2509,9 @@ HIC_reg <- lm(Output ~ pig_income_effect + chicken_income_effect + pig_mort_effe
 
 stargazer(HIC_reg, type = "text") 
 #'significant: pig and chicken income effects, affect on human AMR, disease incidence,
-#'background AMR prevalence, mortality from resistant infection (pos), mortality from
-#'susceptible infection (neg), QoL from sequelae (only significant at 10%)
+#'background AMR prevalence, mortality from resistant infection (pos),
+#'QoL from sickness, LoS from resistant infections, AMR growth rate,
+#'portion of animals in industrial farms
 
 rsq.partial(HIC_reg) #
 
@@ -2523,14 +2524,11 @@ barplot(HIC_prsq_val,
         names.arg = HIC_prsq_var,
         main = "Partial R^2")
 
-HIC_prsq_val2 <- c(HIC_prsq_val[2], HIC_prsq_val[5], HIC_prsq_val[7], HIC_prsq_val[1],
+HIC_prsq_val2 <- c(HIC_prsq_val[5], HIC_prsq_val[2], HIC_prsq_val[1], HIC_prsq_val[7],
                   HIC_prsq_val[6], HIC_prsq_val[8])
 
-# HIC_prsq_var2 <- c(HIC_prsq_var[2], HIC_prsq_var[5], HIC_prsq_var[7], HIC_prsq_var[1],
-#                    HIC_prsq_var[6], HIC_prsq_var[8])
-
-HIC_prsq_var2 <- c("effect on chicken productivity", "change in human AMR", "background AMR prevalence",
-                   "effect on pig productivity", "disease incidence", "mortality from resistant infections")
+HIC_prsq_var2 <- c("change in human AMR", "effect on chicken productivity", "effect on pig productivity",
+                   "background AMR prevalence", "disease incidence", "mortality from resistant infections")
 
 jpeg("Outputs/Table 2 A.jpg")
 
@@ -2555,7 +2553,7 @@ MIC_reg <- lm(Output ~ pig_income_effect + chicken_income_effect + pig_mort_effe
 
 stargazer(MIC_reg, type = "text") 
 #'significant: pig and chicken income effects, change in human AMR, 
-#'QoL from sequelae (10%), number of chickens in smallholder farms (10%)
+#'number of chickens (10%), number of chickens in industrial farms (10%)
 
 rsq.partial(MIC_reg) #
 
@@ -2568,9 +2566,9 @@ barplot(MIC_prsq_val,
         names.arg = MIC_prsq_var,
         main = "Portion of Variation in Cost-Effectiveness Explained by Variation in Each Parameter - MICs")
 
-MIC_prsq_val2 <- c(MIC_prsq_val[5], MIC_prsq_val[2], MIC_prsq_val[1])
-MIC_prsq_var2 <- c("Effect on Human AMR", "Effect on Chicken Productivity",
-                   "Effect on Pig Productivity")
+MIC_prsq_val2 <- c(MIC_prsq_val[5], MIC_prsq_val[1], MIC_prsq_val[2])
+MIC_prsq_var2 <- c("Effect on Human AMR", "Effect on Pig Productivity",
+                   "Effect on Chicken Productivity")
 
 jpeg("Outputs/Table 2 B.jpg")
 
@@ -2594,10 +2592,7 @@ LIC_reg <- lm(Output ~ pig_income_effect + chicken_income_effect + pig_mort_effe
 stargazer(LIC_reg, type = "text") 
 #'Significant: pig and chicken income effects, effect on human AMR, background disease prevalence,
 #'background AMR prevalence, mortality from resistant infections (positive), 
-#'mortality from susceptible infections (negative), QoL from sickness, number of chickens,
-#'number of pigs (10%), number of pigs on a small farm (positive, 10%), 
-#'number of pigs on an industrial farm (negstive, 10%), number of pigs on a small farm (positive),
-#'portion of animals in industrial farms (positive)
+#'mortality from susceptible infections (negative), LoS for resistant infections, AMR growth rate
 
 rsq.partial(LIC_reg) 
 #'big ones were pig and chicken income effect, background sickness, effect on human AMR,
@@ -2613,10 +2608,10 @@ barplot(LIC_prsq_val,
         main = "Portion of Variation in Cost-Effectiveness Explained by Variation in Each Parameter - LICs")
 
 LIC_prsq_val2 <- c(LIC_prsq_val[2], LIC_prsq_val[5], LIC_prsq_val[1], LIC_prsq_val[8],
-                   LIC_prsq_val[6], LIC_prsq_val[22])
+                   LIC_prsq_val[6], LIC_prsq_val[7])
 LIC_prsq_var2 <- c("Effect on Chicken Productivity", "Effect on Human AMR", "Effect on Pig Productivity",
                    "Mortality from Resistant Infections", "Background Disease Prevalence",
-                   "Portion of Animals in Industrial Farms")
+                   "AMR Prevalence")
 
 jpeg("Outputs/Table 2 C.jpg")
 
@@ -2724,3 +2719,23 @@ barplot(counts,
         main = "Contribution to Net Monetary Benefit ($bn USD)")
 
 dev.off()
+
+# Min, Max, and Median from Montecarlo ------------------------------------
+
+summary_stats <- matrix(rep(0), ncol = 3, nrow = 3)
+colnames(summary_stats) <- c("Minimum Value", "Median Value", "Maximum Value")
+rownames(summary_stats) <- c("LIC", "MIC", "HIC")
+
+summary_stats["LIC", "Minimum Value"] <- min_LIC
+summary_stats["LIC", "Median Value"] <- avg_LIC
+summary_stats["LIC", "Maximum Value"] <- max_LIC
+
+summary_stats["MIC", "Minimum Value"] <- min_MIC
+summary_stats["MIC", "Median Value"] <- avg_MIC
+summary_stats["MIC", "Maximum Value"] <- max_MIC
+
+summary_stats["HIC", "Minimum Value"] <- min_HIC
+summary_stats["HIC", "Median Value"] <- avg_HIC
+summary_stats["HIC", "Maximum Value"] <- max_HIC
+
+write.xlsx(summary_stats, "Outputs/Summary Stats.xlsx")
