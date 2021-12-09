@@ -28,8 +28,11 @@ An additional input for the case study version of the model, used in the demogra
 ## Vietnam Population.csv
 The final input for the case study version of the model, used in the demographic module of the model
 
+## Model Parameters and Calculations.pdf
+This spreadsheet contains sources for our model parameters for the general model; and displays the values used, their distributions (if applicable), and how they were calculated
+
 # Required packages
-data.table / readxl / stargazer / tidyverse / tseries / forecast / dynlm / seastests / forecast / TSA / epiR / extraDistr / MonoInc / pksensi / sensitivity / xlsx / gridExtra / ggplot2 / reshape2 / here / multisensi
+data.table / readxl / stargazer / tidyverse / tseries / forecast / dynlm / seastests / forecast / TSA / epiR / extraDistr / MonoInc / pksensi / sensitivity / xlsx / gridExtra / ggplot2 / reshape2 / here / multisensi / rsq / forcats
 
 # Using this model
 To run the model and create the outputs referenced in the paper, download the six files named above and store them in the same folder on your computer. Ensure that the required packages are installed. The models can now be run <br><br> A major aim of these models is that they be used to simulate One Health AMR interventions in agriculture in other real-life contexts. In order to do this, researchers and policymakers can alter the inputs to reflect the context of interest. Because it may be difficult to determine all of the necessary parameters for the context of interest, we recommend the following:<br><br>1) choose the income category scenario that is most appropriate (low-income (LIC), middle income centred on smallholder agricultre (MIC-s), middle income centred on industrial agriculture (MIC-i) or high income);<br>2) in the input file for the general version of the model, 'inputs - general model.csv', edit the parameters in the column of the chosen income category where they are known, and leave the remaining parameters unchanged;<br>3) go to the general version of the model and select the relevant income category by editing the line <br>`scenario_income <- "..... `;<br>4) run the model and obtain results! <br><br>the more accurately the user is able to parameterise the model to the context of the interest, the more accurate the results
