@@ -24,6 +24,7 @@ library("devtools")
 library("multisensi")
 library("rsq")
 library("forcats")
+library("patchwork")
 
 # Data files --------------------------------------------------------------
 
@@ -57,7 +58,7 @@ scenario_prod <- "HCA"
 scenario_transmission <- "med"
 scenario_farm_effect <- "hi"
 
-number_runs <- 10000
+number_runs <- 1000
 
 # Table 1 - Maximum Cost under Each Scenario ------------------------------
 
@@ -303,6 +304,26 @@ write.xlsx(scenario_analysis_MIC_I, "Outputs/Table 1 B.xlsx")
 write.xlsx(scenario_analysis_MIC_S, "Outputs/Table 1 C.xlsx")
 write.xlsx(scenario_analysis_HIC, "Outputs/Table 1 D.xlsx")
 
+## ggplot Table A outputs
+tableA <- as.data.frame(rbind(scenario_analysis_LIC, scenario_analysis_MIC_I, scenario_analysis_MIC_S, scenario_analysis_HIC))
+colnames(tableA) <- c(-2,-1,0,1,2)
+tableA$income_group <- c(rep(c("LIC","MIC_I","MIC_S","HIC"),each = nrow(scenario_analysis_LIC)))
+tableA$human_amr <- c(-2.5,-5,-10,-16)
+rownames(tableA) <- NULL
+tableA <- tableA %>% pivot_longer(cols = seq(-2:2), names_to = "animal_prod")
+tableA$animal_prod <- factor(tableA$animal_prod,levels = c(-2,-1,0,1,2) )
+tableA <- tableA %>% mutate(default = ifelse(human_amr == -5.0 & animal_prod == "1",1,""))
+
+
+  
+tb1 <-  ggplot(tableA, aes(x=factor(human_amr), y = value, fill = animal_prod)) + geom_bar(position="dodge", stat="identity", aes(colour = factor(default))) + 
+  facet_wrap(~income_group, scales = "free") + 
+  scale_x_discrete("Impact of intervention on prevalence of AMR in human sepsis infections") + 
+  scale_y_continuous("Maximum Annual Cost (2020 $USD)") + 
+  scale_fill_manual(values = c("#d7191c","#fdae61","#ffffbf","#abd9e9","#2c7bb6"), "Impact of\nintervention on\nanimal production") + 
+  scale_colour_manual(values = c("black","red")) + guides(colour = "none")
+ggsave("Outputs/table1.pdf")
+
 
 # Figure 2 - Distribution of Results from Montecarlo Simulation -----------
 
@@ -326,6 +347,7 @@ colnames(inputs_LIC) <- c("parameter", "description", "HIC", "MIC-I", "MIC-S", "
 set.seed(42069)
 
 for(i in 1:number_runs){
+  print(i)
   #load dataset
   inputsPSA <- inputs_LIC
   
@@ -454,6 +476,13 @@ for(i in 1:number_runs){
 min_LIC <- min(LIC_MC_Vector)
 max_LIC <- max(LIC_MC_Vector)
 avg_LIC <- median(LIC_MC_Vector)
+
+# Define output holder
+montecarlo_output <- as.data.frame(matrix(0,number_runs,4))
+colnames(montecarlo_output) <- c("run","LIC","MIC","HIC")
+montecarlo_output$run <- seq(1,number_runs,1)
+
+montecarlo_output$LIC <- LIC_MC_Vector
 
 jpeg("Outputs/Figure 2 A.jpg")
 
@@ -611,6 +640,8 @@ min_MIC <- min(MIC_MC_Vector)
 max_MIC <- max(MIC_MC_Vector)
 avg_MIC <- median(MIC_MC_Vector)
 
+montecarlo_output$MIC <- MIC_MC_Vector
+
 jpeg("Outputs/Figure 2 B.jpg")
 
 hist(MIC_MC_Vector,
@@ -766,6 +797,8 @@ min_HIC <- min(HIC_MC_Vector)
 max_HIC <- max(HIC_MC_Vector)
 avg_HIC <- median(HIC_MC_Vector)
 
+montecarlo_output$HIC <- HIC_MC_Vector
+
 jpeg("Outputs/Figure 2 C.jpg")
 
 hist(HIC_MC_Vector,
@@ -777,6 +810,17 @@ dev.off()
 
 write.xlsx(HIC_MC_Vector, "Outputs/MC Results HIC.xlsx")
 
+# ggplot
+monte_output_plot <- montecarlo_output %>% pivot_longer(LIC:HIC)
+monte_output_plot$name <- factor(monte_output_plot$name, levels = c("LIC","MIC","HIC"))
+theme_set(theme_bw(base_size = 12))
+ggplot(monte_output_plot, aes(value)) + geom_histogram(bins = 20, aes(fill = name)) + 
+  facet_wrap(~name, scales = "free") + 
+  scale_y_continuous("Number of simulations") + 
+  scale_x_continuous("Maximum Annual Cost (USD)") + 
+  scale_fill_discrete("Income group") + 
+  geom_vline(xintercept = 0, linetype = "dashed")
+ggsave("Outputs/monte_carlo.jpeg", width = 13, height = 5)
 
 # Figure 3 - Tornado Plots ------------------------------------------------
 
@@ -1854,6 +1898,84 @@ ggplot(tornado_LIC_animal, aes(variable, ymin = min, ymax = max)) +
 
 dev.off()
 
+#### ggplot version
+tornado_HIC_animal$ic <- "HIC"
+tornado_HIC_animal$sp <- "animal"
+tornado_HIC_human$ic <- "HIC"
+tornado_HIC_human$sp <- "human"
+tornado_MICI_animal$ic <- "MICI"
+tornado_MICI_animal$sp <- "animal"
+tornado_MICI_human$ic <- "MICI"
+tornado_MICI_human$sp <- "human"
+tornado_MICS_animal$ic <- "MICS"
+tornado_MICS_animal$sp <- "animal"
+tornado_MICS_human$ic <- "MICS"
+tornado_MICS_human$sp <- "human"
+tornado_LIC_animal$ic <- "LIC"
+tornado_LIC_animal$sp <- "animal"
+tornado_LIC_human$ic <- "LIC"
+tornado_LIC_human$sp <- "human"
+
+width = 2
+base.value = 0
+
+
+
+fig3_data_orig <- rbind(tornado_HIC_animal, tornado_HIC_human,
+                   tornado_MICI_animal, tornado_MICI_human,
+                   tornado_MICS_animal, tornado_MICS_human,
+                   tornado_LIC_animal, tornado_LIC_human) %>% 
+  mutate(difference = abs(max-min)) 
+
+order.parameters.animal <- fig3_data_orig %>% filter(ic == "LIC", sp == "animal") %>% 
+  arrange(difference) %>%
+  mutate(Parameter=factor(x=variable, levels=variable)) %>%
+  select(Parameter) %>% unlist() %>% levels()
+order.parameters.human <- fig3_data_orig %>% filter(ic == "LIC", sp == "human") %>% 
+  arrange(difference) %>%
+  mutate(Parameter=factor(x=variable, levels=variable)) %>%
+  select(Parameter) %>% unlist() %>% levels()
+
+fig3_data <- fig3_data_orig %>% 
+  #group_by(sp) %>%
+  #arrange(difference) %>% 
+  group_by(ic, sp) %>%
+  mutate(orderng = factor(variable, levels = c(order.parameters.animal,order.parameters.human))) %>%
+  arrange(orderng) %>% 
+  mutate(para = seq(1,n())) %>% 
+  pivot_longer(cols = min:max) %>%
+  mutate(ymin=pmin(value, base.value),
+         ymax=pmax(value, base.value),
+         xmin=as.numeric(para)-width/2,
+         xmax=as.numeric(para)+width/2) 
+fig3_data$ic <- factor(fig3_data$ic, levels = c("LIC","MICI","MICS","HIC"))
+
+                   
+g1 <- ggplot() + 
+  geom_rect(data = fig3_data %>% filter(sp == "animal"), 
+            aes(ymax=ymax, ymin=ymin, xmax=xmax, xmin=xmin, fill=variable)) +
+  theme_bw() + 
+  theme(axis.title.y=element_blank(), legend.position = 'bottom',
+        legend.title = element_blank()) + 
+  geom_hline(yintercept = base.value) +
+  facet_grid(sp ~ ic, scales = "free") + 
+  scale_x_continuous(breaks = seq(1:8), labels = order.parameters.animal) +
+  coord_flip()
+
+g2 <- ggplot() + 
+  geom_rect(data = fig3_data %>% filter(sp == "human"), 
+            aes(ymax=ymax, ymin=ymin, xmax=xmax, xmin=xmin, fill=variable)) +
+  theme_bw() + 
+  theme(axis.title.y=element_blank(), legend.position = 'bottom',
+        legend.title = element_blank()) + 
+  geom_hline(yintercept = base.value) +
+  facet_grid(sp ~ ic, scales = "free") + 
+  scale_x_continuous(breaks = seq(1:length(order.parameters.human)), labels = order.parameters.human) +
+  coord_flip()
+
+g1 / g2
+ggsave("Outputs/figure3_ggplot.jpeg",width = 20, height = 14)
+
 # Table 2 - Global Sensitivity Analysis -----------------------------------
 
 scenario_prod <- "HCA" 
@@ -2739,3 +2861,24 @@ summary_stats["HIC", "Median Value"] <- avg_HIC
 summary_stats["HIC", "Maximum Value"] <- max_HIC
 
 write.xlsx(summary_stats, "Outputs/Summary Stats.xlsx")
+
+
+### ggplot summary stats
+summary_stats_plt <- as.data.frame(summary_stats)
+colnames(summary_stats_plt) <- c("min","median","max")
+summary_stats_plt$income_group <- c("LIC","MIC","HIC")
+summary_stats_plt$income_group <- factor(summary_stats_plt$income_group, levels = c("LIC","MIC","HIC"))
+#summary_stats_plt %>% pivot_longer(cols = min:max)
+tb1_2 <- ggplot(summary_stats_plt, aes(x=income_group, y = median, fill = income_group)) + geom_bar(stat = "identity") + 
+  geom_errorbar(aes(ymin = min, ymax = max)) +
+  scale_y_log10("Maximum Annual Value\n(2020 $USD)\nfor default scenario") + 
+  scale_x_discrete("Income group") + 
+  scale_fill_discrete("Income group")
+ggsave("Outputs/Summary_default.pdf")  
+
+### New figure instead of table 2   
+tb1_2 / tb1 + plot_layout(heights=c(1,2)) +
+  plot_annotation(tag_levels = 'A')
+ggsave("Outputs/newfig_nottbl2.jpeg")
+
+
