@@ -2674,7 +2674,7 @@ table_4 <- matrix(rep(0), nrow = 4, ncol = 2)
 colnames(table_4) <- c("Effect on Human AMR", "Macro-Level Net Monetary Benefit ($USD)")
 table_4[,1] <- c(-0.025, -0.05, -0.10, -0.16)
 
-scenario_transmission <- "lo"
+scenario_transmission <- "low"
 table_4[1,2] <- as.numeric(Model_Case_Study(inputs_casestudy, scenario_income, scenario_prod, scenario_transmission,scenario_farm_effect)[1,1])
 
 scenario_transmission <- "med" 

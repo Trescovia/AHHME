@@ -51,6 +51,12 @@ Model <- function(inputs, scenario_income, scenario_prod, scenario_transmission,
     popchange[i] <- population[i+1]-population[i]
   }
   
+  #create vector of population relative to initial (for food production growth)
+  pop_relative <- rep(0, length(population))
+  for(i in 1:length(pop_relative)){
+    pop_relative[i] <- population[i] / population[1]
+  }
+  
   # Human Epi Model ---------------------------------------------------------
   
   #building parameter matrix
@@ -430,6 +436,11 @@ Model <- function(inputs, scenario_income, scenario_prod, scenario_transmission,
     m_param_a <- t(replicate(n.t.val,m_a_sum))
     colnames(m_param_a) <- parameter_names_a
     rownames(m_param_a) <- paste("cycle", 0:(n.t-1), sep  =  "")
+    
+    #adjust farm outputs for the growth in agricultural output
+    for(i in 1:nrow(m_param_a)){
+      m_param_a[i,] <- m_param_a[1,] * pop_relative[i]
+    }
     
     m_param_a
     
@@ -1176,9 +1187,8 @@ Model_Case_Study <- function(inputs, scenario_income, scenario_prod, scenario_tr
     popchange[i] <- futurepop[i+1] - futurepop[i]
   } #atm popchange[1] shows NET births in 2020
   
-  popchange <- popchange[2:tstop] #now popchange[1] is NET popchange in 2021
-
-
+  popchange <- popchange[2:tstop] #now popchange[1] is net popchange in 2021
+  
 # Dependency ratio --------------------------------------------------------
 
   dependency <- ts(dependency$Dependency.Ratio, start = 1960, frequency = 1)
@@ -1596,6 +1606,17 @@ Model_Case_Study <- function(inputs, scenario_income, scenario_prod, scenario_tr
     m_param_a <- t(replicate(n.t.val,m_a_sum))
     colnames(m_param_a) <- parameter_names_a
     rownames(m_param_a) <- paste("cycle", 0:(n.t-1), sep  =  "")
+    
+    #create a vector of population relative to initial (for food production growth)
+    pop_relative <- rep(0, n.t.val)
+    for(i in 1:length(pop_relative)){
+      pop_relative[i] <- m_param[i, "was_well"] / m_param[1, "was_well"]
+    }
+    
+    #adjust farm outputs for the growth in agricultural output
+    for(i in 1:nrow(m_param_a)){
+      m_param_a[i,] <- m_param_a[1,] * pop_relative[i]
+    }
     
     m_param_a
     
