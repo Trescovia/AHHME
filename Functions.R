@@ -7,10 +7,8 @@ Model <- function(inputs, scenario_income, scenario_prod, scenario_transmission,
     inputs[,"Value"] <- inputs[,"HIC"]
   } else if(scenario_income == "LIC"){
     inputs[,"Value"] <- inputs[,"LIC"]
-  } else if(scenario_income == "MIC-I"){
-    inputs[,"Value"] <- inputs[,"MIC-I"]
-  } else if(scenario_income == "MIC-S"){
-    inputs[,"Value"] <- inputs[,"MIC-S"]
+  } else if(scenario_income == "MIC"){
+    inputs[,"Value"] <- inputs[,"MIC"]
   }
   
   inputs[ , Value := as.numeric(as.character(Value))]
@@ -439,7 +437,7 @@ Model <- function(inputs, scenario_income, scenario_prod, scenario_transmission,
     
     #adjust farm outputs for the growth in agricultural output
     for(i in 1:nrow(m_param_a)){
-      m_param_a[i,] <- m_param_a[1,] * pop_relative[i]
+      m_param_a[i,] <- m_param_a[i,] * pop_relative[i]
     }
     
     m_param_a
@@ -1615,7 +1613,7 @@ Model_Case_Study <- function(inputs, scenario_income, scenario_prod, scenario_tr
     
     #adjust farm outputs for the growth in agricultural output
     for(i in 1:nrow(m_param_a)){
-      m_param_a[i,] <- m_param_a[1,] * pop_relative[i]
+      m_param_a[i,] <- m_param_a[i,] * pop_relative[i]
     }
     
     m_param_a
