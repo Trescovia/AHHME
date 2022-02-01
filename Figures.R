@@ -25,6 +25,7 @@ library("multisensi")
 library("rsq")
 library("forcats")
 library("patchwork")
+library("scales")
 
 # Data files --------------------------------------------------------------
 
@@ -255,9 +256,9 @@ tableA <- tableA %>% mutate(default = ifelse(human_amr == -5.0 & animal_prod == 
 
 tb1 <-  ggplot(tableA, aes(x=factor(human_amr), y = value, fill = animal_prod)) + geom_bar(position="dodge", stat="identity", aes(colour = factor(default))) + 
   facet_wrap(~income_group, scales = "free") + 
-  scale_x_discrete("Impact of intervention on prevalence of AMR in human sepsis infections") + 
-  scale_y_continuous("Maximum Annual Cost (2020 $USD)") + 
-  scale_fill_manual(values = c("#d7191c","#fdae61","#ffffbf","#abd9e9","#2c7bb6"), "Impact of\nintervention on\nanimal production") + 
+  scale_x_discrete("Impact of intervention on prevalence of AMR in human sepsis infections (%)") + 
+  scale_y_continuous("Threshold Price (2020 $USD)", labels = comma) + 
+  scale_fill_manual(values = c("#d7191c","#fdae61","#ffffbf","#abd9e9","#2c7bb6"), "Impact of\nintervention on\nanimal production (%)") + 
   scale_colour_manual(values = c("black","red")) + guides(colour = "none")
 ggsave("Outputs/table1.pdf")
 
@@ -751,6 +752,14 @@ montecarlo_output$HIC <- HIC_MC_Vector
 
 write.xlsx(HIC_MC_Vector, "Outputs/MC Results HIC.xlsx")
 
+# #To load existing MC data
+# monteHIC <- read_excel("Outputs/MC results HIC.xlsx")[,2]
+# monteMIC <- read_excel("Outputs/MC results MIC.xlsx")[,2]
+# monteLIC <- read_excel("Outputs/MC results LIC.xlsx")[,2]
+# montecarlo_output <- as.data.frame(cbind(monteLIC, monteMIC, monteHIC))
+# colnames(montecarlo_output) <- c("LIC", "MIC", "HIC")
+
+
 # ggplot
 monte_output_plot <- montecarlo_output %>% pivot_longer(LIC:HIC)
 monte_output_plot$name <- factor(monte_output_plot$name, levels = c("LIC","MIC","HIC"))
@@ -758,7 +767,7 @@ theme_set(theme_bw(base_size = 12))
 ggplot(monte_output_plot, aes(value)) + geom_histogram(bins = 20, aes(fill = name)) + 
   facet_wrap(~name, scales = "free") + 
   scale_y_continuous("Number of simulations") + 
-  scale_x_continuous("Maximum Annual Cost (USD)") + 
+  scale_x_continuous("Threshold Price ($2020 USD)") + 
   scale_fill_discrete("Income group") + 
   geom_vline(xintercept = 0, linetype = "dashed")
 ggsave("Outputs/monte_carlo.jpeg", width = 13, height = 5)
@@ -2453,6 +2462,11 @@ summary_stats["HIC", "Maximum Value"] <- max_HIC
 
 write.xlsx(summary_stats, "Outputs/Summary Stats.xlsx")
 
+#for loading existing MC data
+# summary_stats <- read_excel("Outputs/Summary Stats.xlsx")
+# summary_stats <- as.data.frame(summary_stats)
+# rownames(summary_stats) <- c("LIC", "MIC", "HIC")
+# summary_stats <- summary_stats[,c(2,3,4)]
 
 ### ggplot summary stats
 summary_stats_plt <- as.data.frame(summary_stats)
@@ -2462,7 +2476,7 @@ summary_stats_plt$income_group <- factor(summary_stats_plt$income_group, levels 
 #summary_stats_plt %>% pivot_longer(cols = min:max)
 tb1_2 <- ggplot(summary_stats_plt, aes(x=income_group, y = median, fill = income_group)) + geom_bar(stat = "identity") + 
   geom_errorbar(aes(ymin = min, ymax = max)) +
-  scale_y_log10("Maximum Annual Value\n(2020 $USD)\nfor default scenario") + 
+  scale_y_log10("Threshold Price\n(2020 $USD)\nfor Default Scenario") + 
   scale_x_discrete("Income group") + 
   scale_fill_discrete("Income group")
 ggsave("Outputs/Summary_default.pdf")  
