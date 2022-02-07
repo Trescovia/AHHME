@@ -4,7 +4,7 @@ Code :computer: and necessary inputs :file_folder: for a holistic economic :char
 # Paper Information
 Title: A Holistic Macroeconomic Model for Evaluating the Cost-Effectiveness of AMR Interventions in Agriculture across Countries <br> <br>
 Authors (alphabetical order): <br>
-Tresco Emes, Gwenan M Knight, Nichola Naylor, Jeff Waage <br> <br>
+Eve Tresco Emes, Gwenan M Knight, Nichola Naylor, Jeff Waage <br> <br>
 Other collaborators (alphabetical order) <br> Dang Sinh, Fred Unger, Le Trang <br>
 
 
