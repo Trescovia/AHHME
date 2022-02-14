@@ -14,6 +14,16 @@
 Model <- function(inputs, scenario_income, scenario_prod, scenario_transmission,
                   scenario_farm_effect){
   
+  #'the inputs to our model(inputs, scenario_income, scenario_prod, scenario_transmission, scenario_farm_effect)
+  #'are respectively: the name of the inputs csv file, the income group of the 
+  #'hypothetical setting (high, middle, or low), the way we calculate the productivity
+  #'losses from illness (either the human capital or friction cost approaches),
+  #'the scenario for the effect of the intervention on the prevalence of human AMR
+  #'(low effect, medium effect, high effect, or maximum effect), and finally
+  #'the scenario for the effect of the intervention on livestock productivity (
+  #'stronger negative effect, weaker negative effect, neutral effect, weaker 
+  #'positive effect, or stronger positive effect)
+  
   if(scenario_income == "HIC"){
     inputs[,"Value"] <- inputs[,"HIC"]
   } else if(scenario_income == "LIC"){
@@ -367,6 +377,18 @@ Model <- function(inputs, scenario_income, scenario_prod, scenario_transmission,
   }
   
   pv_life_prod <- sum(pv_fut_prod)
+  
+  #'productivity effect depends on whether we use the human capital approach (HCA) 
+  #'or friction cost approach (FCA) to estimating productivity losses (below)
+  #' 
+  #' if we use the HCA, then a death incurs a loss equal to all of the labour 
+  #' productivity that the dying person would have contributed during the remainder
+  #' of their life had they not died. If we use the FCA, then it is assumed that
+  #' there exists a reserve army of labour from which new workers can be drawn in 
+  #' the event of somebody's death, meaning that we lose the productivity that
+  #' the dying person would have contributed during the time that it takes to find
+  #' a replacement worker (this is typically assumed to be six months)
+  
   
   if(scenario_prod == "HCA"){
     r_d_prod <- -1 * pv_life_prod
