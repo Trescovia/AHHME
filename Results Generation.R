@@ -1,3 +1,13 @@
+# What This File Does -----------------------------------------------------
+#'This file uses the functions defined in Functions.R to produce all of the
+#'outputs used in our manuscript.It first computes the net monetary benefit
+#'of our hypothetical intervention for the general model under different scenarios, 
+#'then conducts univariate and multivariate sensitivity analysis and shows the 
+#'breakdown of net benefit by sector. Then, it computes the net monetary benefit
+#'of a specific intervention for the Vietnamese case study, and shows the breakdown
+#'of net benefit by sector.
+
+
 # Packages ----------------------------------------------------------------
 
 library("data.table")

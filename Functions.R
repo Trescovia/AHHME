@@ -1,3 +1,14 @@
+# What This File Does -----------------------------------------------------
+#'This file creates two models, a general model ("Model") and a case study model
+#'("Model_Case_study"). These models are used in the file "Results Generation.R" 
+#'to create all of the outputs used in our paper. "Model" is the general version 
+#'of the AHHME model, which simulates the rollout of an antimicrobial replacement
+#'intervention in livestock production in hypothetical low-, middle-, and high-
+#'income countries. "Model_Case_Study" simulates the rollout of a specific 
+#'antimicrobial replacement, animal husbandry, and biosecurity intervention in 
+#'present-day Vietnam. 
+
+
 # General Model -----------------------------------------------------------
 
 Model <- function(inputs, scenario_income, scenario_prod, scenario_transmission,
