@@ -267,7 +267,7 @@ tableA <- tableA %>% mutate(default = ifelse(human_amr == -5.0 & animal_prod == 
 tb1 <-  ggplot(tableA, aes(x=factor(human_amr), y = value, fill = animal_prod)) + geom_bar(position="dodge", stat="identity", aes(colour = factor(default))) + 
   facet_wrap(~income_group, scales = "free") + 
   scale_x_discrete("Impact of intervention on prevalence of AMR in human sepsis infections (%)") + 
-  scale_y_continuous("Threshold Price (2020 $USD)", labels = comma) + 
+  scale_y_continuous("Threshold Price (2019 $USD)", labels = comma) + 
   scale_fill_manual(values = c("#d7191c","#fdae61","#ffffbf","#abd9e9","#2c7bb6"), "Impact of\nintervention on\nanimal production (%)") + 
   scale_colour_manual(values = c("black","red")) + guides(colour = "none")
 ggsave("Outputs/table1.pdf")
@@ -360,17 +360,17 @@ for(i in 1:number_runs){
   inputsPSA[parameter == "chicken_price", "LIC"] <- rlnorm(1, as.numeric(inputsPSA[parameter == "chicken_price", "LIC param 1"]), 
                                                            as.numeric(inputsPSA[parameter == "chicken_price", "LIC param 2"]))
   
-  inputsPSA[parameter == "c_mort_ind", "LIC"] <- rbeta(1, as.numeric(inputsPSA[parameter == "c_mort_ind", "LIC param 1"]), 
-                                                           as.numeric(inputsPSA[parameter == "c_mort_ind", "LIC param 2"]))
-  
-  inputsPSA[parameter == "c_mort_small", "LIC"] <- rbeta(1, as.numeric(inputsPSA[parameter == "c_mort_small", "LIC param 1"]), 
-                                                           as.numeric(inputsPSA[parameter == "c_mort_small", "LIC param 2"]))
-  
-  inputsPSA[parameter == "p_mort_ind", "LIC"] <- rbeta(1, as.numeric(inputsPSA[parameter == "p_mort_ind", "LIC param 1"]), 
-                                                           as.numeric(inputsPSA[parameter == "p_mort_ind", "LIC param 2"]))
-  
-  inputsPSA[parameter == "p_mort_small", "LIC"] <- rbeta(1, as.numeric(inputsPSA[parameter == "p_mort_small", "LIC param 1"]), 
-                                                           as.numeric(inputsPSA[parameter == "p_mort_small", "LIC param 2"]))
+  # inputsPSA[parameter == "c_mort_ind", "LIC"] <- rbeta(1, as.numeric(inputsPSA[parameter == "c_mort_ind", "LIC param 1"]), 
+  #                                                          as.numeric(inputsPSA[parameter == "c_mort_ind", "LIC param 2"]))
+  # 
+  # inputsPSA[parameter == "c_mort_small", "LIC"] <- rbeta(1, as.numeric(inputsPSA[parameter == "c_mort_small", "LIC param 1"]), 
+  #                                                          as.numeric(inputsPSA[parameter == "c_mort_small", "LIC param 2"]))
+  # 
+  # inputsPSA[parameter == "p_mort_ind", "LIC"] <- rbeta(1, as.numeric(inputsPSA[parameter == "p_mort_ind", "LIC param 1"]), 
+  #                                                          as.numeric(inputsPSA[parameter == "p_mort_ind", "LIC param 2"]))
+  # 
+  # inputsPSA[parameter == "p_mort_small", "LIC"] <- rbeta(1, as.numeric(inputsPSA[parameter == "p_mort_small", "LIC param 1"]), 
+  #                                                          as.numeric(inputsPSA[parameter == "p_mort_small", "LIC param 2"]))
   
   inputsPSA[parameter == "res_change", "Med"] <- -1 * rbeta(1, as.numeric(inputsPSA[parameter == "res_change", "LIC param 1"]), 
                                                             as.numeric(inputsPSA[parameter == "res_change", "LIC param 2"]))
@@ -463,6 +463,7 @@ colnames(inputs_MIC) <- c("parameter", "description", "HIC", "MIC", "", "LIC", "
 set.seed(42069)
 
 for(i in 1:number_runs){
+  print(i)
   #load dataset
   inputsPSA <- inputs_MIC
   
@@ -621,6 +622,7 @@ set.seed(42069)
 
 for(i in 1:number_runs){
   #load dataset
+  print(i)
   inputsPSA <- inputs_HIC
   
   inputsPSA[parameter == "well_sick", "HIC"] <- rbeta(1, as.numeric(inputsPSA[parameter == "well_sick", "HIC param 1"]), 
@@ -777,7 +779,7 @@ theme_set(theme_bw(base_size = 12))
 ggplot(monte_output_plot, aes(value)) + geom_histogram(bins = 20, aes(fill = name)) + 
   facet_wrap(~name, scales = "free") + 
   scale_y_continuous("Number of simulations") + 
-  scale_x_continuous("Threshold Price ($2020 USD)") + 
+  scale_x_continuous("Threshold Price ($2019 USD)") + 
   scale_fill_discrete("Income group") + 
   geom_vline(xintercept = 0, linetype = "dashed")
 ggsave("Outputs/monte_carlo.jpeg", width = 13, height = 5)
@@ -2363,29 +2365,30 @@ scenario_prod      <- "HCA"
 scenario_farm_effect <- "hi"
 scenario_transmission <- "med"
 
-table_3 <- matrix(rep(0), nrow = 3, ncol = 9)
+table_3 <- matrix(rep(0), nrow = 3, ncol = 10)
 colnames(table_3) <- c("Income Group", 
                        "Maximum Acceptable Cost (Annual)",
                        "Value of Productivity Gained",
                        "Cost Saved for Healthcare",
-                       "Value of DALYs Averted",
+                       "Value of QALYs Saved",
                        "Increased Profit - Smallholder Pig Farms",
                        "Increased Profit - Industrial Pig Farms",
                        "Increased Profit - Smallholder Chicken Farms",
-                       "Increased Profit - Industrial Chicken Farms")
+                       "Increased Profit - Industrial Chicken Farms",
+                       "QALYs Saved")
 
 table_3[1,1] <- "LIC"
 table_3[2,1] <- "MIC"
 table_3[3,1] <- "HIC"
 
 scenario_income <- "LIC"
-table_3[1,2:9] <- as.numeric(Model(inputs_general, scenario_income, scenario_prod, scenario_transmission,scenario_farm_effect))
+table_3[1,2:10] <- as.numeric(Model(inputs_general, scenario_income, scenario_prod, scenario_transmission,scenario_farm_effect))
 
 scenario_income <- "MIC"
-table_3[2,2:9] <- as.numeric(Model(inputs_general, scenario_income, scenario_prod, scenario_transmission,scenario_farm_effect))
+table_3[2,2:10] <- as.numeric(Model(inputs_general, scenario_income, scenario_prod, scenario_transmission,scenario_farm_effect))
 
 scenario_income <- "HIC"
-table_3[3,2:9] <- as.numeric(Model(inputs_general, scenario_income, scenario_prod, scenario_transmission,scenario_farm_effect))
+table_3[3,2:10] <- as.numeric(Model(inputs_general, scenario_income, scenario_prod, scenario_transmission,scenario_farm_effect))
 
 write.xlsx(table_3, "Outputs/Table 3.xlsx")
 
@@ -2437,7 +2440,7 @@ counts[1] <- as.numeric(Model_Case_Study(inputs_casestudy, scenario_income, scen
 counts[2] <- as.numeric(Model_Case_Study(inputs_casestudy, scenario_income, scenario_prod, scenario_transmission,scenario_farm_effect)[1, "Increased Profit - Pig Farms"])
 counts[3] <- as.numeric(Model_Case_Study(inputs_casestudy, scenario_income, scenario_prod, scenario_transmission,scenario_farm_effect)[1, "Value of Productivity Gained"])
 counts[4] <- as.numeric(Model_Case_Study(inputs_casestudy, scenario_income, scenario_prod, scenario_transmission,scenario_farm_effect)[1, "Cost Saved for Healthcare"]) +
-  as.numeric(Model_Case_Study(inputs_casestudy, scenario_income, scenario_prod, scenario_transmission,scenario_farm_effect)[1, "Value of DALYs Averted"])
+  as.numeric(Model_Case_Study(inputs_casestudy, scenario_income, scenario_prod, scenario_transmission,scenario_farm_effect)[1, "Value of QALYs Saved"])
 counts[5] <- as.numeric(-1 * Model_Case_Study(inputs_casestudy, scenario_income, scenario_prod, scenario_transmission,scenario_farm_effect)[1, "Implementation Cost"])
 
 counts <- counts / 1000000000
@@ -2486,7 +2489,7 @@ summary_stats_plt$income_group <- factor(summary_stats_plt$income_group, levels 
 #summary_stats_plt %>% pivot_longer(cols = min:max)
 tb1_2 <- ggplot(summary_stats_plt, aes(x=income_group, y = median, fill = income_group)) + geom_bar(stat = "identity") + 
   geom_errorbar(aes(ymin = min, ymax = max)) +
-  scale_y_log10("Threshold Price\n(2020 $USD)\nfor Default Scenario") + 
+  scale_y_log10("Threshold Price\n(2019 $USD)\nfor Default Scenario") + 
   scale_x_discrete("Income group") + 
   scale_fill_discrete("Income group")
 ggsave("Outputs/Summary_default.pdf")  

@@ -9,6 +9,25 @@
 #'present-day Vietnam. 
 
 
+# Other Functions ---------------------------------------------------------
+
+f_expvalue <- function(x,y,z){
+  ## x is the epi matrix
+  ## y is the cost matrix
+  ## z is the reward matrix
+  results <- matrix(c(sum(x*y),sum(x*z)),1,2)
+  return(results)
+  
+}
+
+f_di <- function(x,y){
+  # function to apply a discount rate
+  # x is cost
+  # y is discount rate 
+  x2 <- x - (x*y)
+  return(x2)
+}
+
 # General Model -----------------------------------------------------------
 
 Model <- function(inputs, scenario_income, scenario_prod, scenario_transmission,
@@ -37,24 +56,7 @@ Model <- function(inputs, scenario_income, scenario_prod, scenario_transmission,
   n.t <- inputs[parameter=="n.t",Value] + 1
   
   inputs[ , Value := as.numeric(as.character(Value))]
-  
-  f_expvalue <- function(x,y,z){
-    ## x is the epi matrix
-    ## y is the cost matrix
-    ## z is the reward matrix
-    results <- matrix(c(sum(x*y),sum(x*z)),1,2)
-    return(results)
-    
-  }
-  
-  f_di <- function(x,y){
-    # function to apply a discount rate
-    # x is cost
-    # y is discount rate 
-    x2 <- x - (x*y)
-    return(x2)
-  }
-  
+
   n.t <- inputs[parameter=="n.t",Value] + 1
   
   # Population growth -------------------------------------------------------
@@ -119,7 +121,10 @@ Model <- function(inputs, scenario_income, scenario_prod, scenario_transmission,
   #chance of dying without infection from 'well', set to zero because background mortality is included in net births
   
   m_param[ , "dead_aft"] <- rep(1, n.t) 
-  #all those who die go to the afterlife
+  #'the 'aft' compartment is simply used for counting deaths, and individuals go there
+  #'after they can no longer transition between states and all impacts have been 
+  #'accounted for (i.e. they die or are in the sequelae state for the remainder
+  #'of their life)
   
   m_param[ , "birth"] <- popchange[1:n.t]
   #predicted net births in a given year
@@ -128,9 +133,11 @@ Model <- function(inputs, scenario_income, scenario_prod, scenario_transmission,
   m_param[1, 1:length(state_names)] <- state_i 
   #adding initial cycle 0 values
   
-  #have growing AMR prevalence
-  #note that we will later ensure that the total disease incidence does not change,
-  #only the portion of infections from resistant bacteria
+  #'have growing AMR prevalence
+  #'note that we will later ensure that the total disease incidence does not change,
+  #'only the portion of infections from resistant bacteria
+  #'this may overestimate the impact of our intervention if improvements in living
+  #'standards cause the overall incidence of disease to fall over time
   amr_growth <- inputs[parameter=="amr_grow", Value]
   
   #set the maximum portion of resistant infections
@@ -265,15 +272,22 @@ Model <- function(inputs, scenario_income, scenario_prod, scenario_transmission,
   #healthy person and b) someone with sequelae. The negative difference is the 'reward' 
   #of being in the sequelae state 
   
-  pv_fut_life <- c(rep(0,n.t-1))
+  remaining_ly <- inputs[parameter=="remaining_ly", Value]
   
-  for (i in 1:n.t-1){
+  #pv_fut_life <- c(rep(0,n.t-1))
+  pv_fut_life <- c(rep(0, remaining_ly))
+  
+  #for (i in 1:n.t-1){
+  for(i in 1:length(pv_fut_life)){
     pv_fut_life[i] <- inputs[parameter=="background_qol", Value] * (1-dr)^(i-1)
   }
   pv_life <- sum(pv_fut_life)
   
-  pv_fut_life_seq <- c(rep(0,n.t-1))
-  for (i in 1:n.t-1){
+  #pv_fut_life_seq <- c(rep(0,n.t-1))
+  pv_fut_life_seq <- c(rep(0,remaining_ly))
+  
+  #for (i in 1:n.t-1){
+  for(i in 1:length(pv_fut_life_seq)){
     pv_fut_life_seq[i] <- inputs[parameter=="qol_seq", Value] * (1-dr)^(i-1)
   }
   pv_life_seq <- sum(pv_fut_life_seq)
@@ -290,7 +304,7 @@ Model <- function(inputs, scenario_income, scenario_prod, scenario_transmission,
     (inputs[parameter == "qol_sick", Value] - inputs[parameter == "background_qol", Value])
   
   r_d <- -1 * pv_life #discounted QoL loss from death
-  r_seq <- pv_life_seq - pv_life # fixed this because we were previously assigning a benefit to sequelae (the subtraction was the wrong way around lol)
+  r_seq <- pv_life_seq - pv_life # fixed this because we were previously assigning a benefit to sequelae (the subtraction was the wrong way around)
   
   rwd_i <- c(0,r_r,r_s,r_d,0,r_seq) 
   
@@ -313,7 +327,7 @@ Model <- function(inputs, scenario_income, scenario_prod, scenario_transmission,
   #loss equal to the discounted value of forgone future earnings, going into the
   #'res' or 'sus states incurs a loss equal to the earnings that would have
   #been made during the time in hospital. After 1 period, all people in 'dead' go
-  #to 'afterlife', which has a reward of zero. 
+  #to the 'aft' compartment, which has a reward of zero. 
   #Using the HCA, the forgone future earnings are those of expected remaining economically
   #active years. For FCA, it is the forgone earnings during the time that it takes
   #to find a replacement worker
@@ -1159,11 +1173,12 @@ Model <- function(inputs, scenario_income, scenario_prod, scenario_transmission,
   outputs <- data.table("Maximum Acceptable Cost (Annual)"=max_cost_annual,
                         "Value of Productivity Gained"=NMB_prod,
                         "Cost Saved for Healthcare"=money_saved_health,
-                        "Value of DALYs Averted"=valuation_QALYs,
+                        "Value of QALYs Saved"=valuation_QALYs,
                         "Increased Profit - Smallholder Pig Farms"=NMB_p_s,
                         "Increased Profit - Industrial Pig Farms"=NMB_p_i,
                         "Increased Profit - Smallholder Chicken Farms"=NMB_c_s,
-                        "Increased Profit - Industrial Chicken Farms"=NMB_c_i)
+                        "Increased Profit - Industrial Chicken Farms"=NMB_c_i,
+                        "QALYs Saved"=QALYs_saved)
   outputs
   
   return(outputs)
@@ -1172,6 +1187,17 @@ Model <- function(inputs, scenario_income, scenario_prod, scenario_transmission,
 
 
 # Case Study --------------------------------------------------------------
+
+#'It is important to note that the case study and the general model use the same
+#'epidemiological and economic model, and that the bulk of the code used is identical
+#'but with different inputs. We only separated them into two separate models because
+#'a) the case study uses actual forecast population data rather than a set 
+#'population growth rate and b) because the case study incorporates intervention
+#'costs, and calculates the net monetary benefit of the intervention inclusive of 
+#'these costs, rather than calculating the threshold price of an unspecified 
+#'intervention. In future versions of AHHME, we aim to separate the components of 
+#'the model into modules, with the intervention cost and population projection
+#'being modules 
 
 Model_Case_Study <- function(inputs, scenario_income, scenario_prod, scenario_transmission,
                   scenario_farm_effect){
@@ -1207,7 +1233,7 @@ Model_Case_Study <- function(inputs, scenario_income, scenario_prod, scenario_tr
   
   pop <- ts(pop$Population, start = 1960, frequency = 1)#
   ARIMApop <- auto.arima(pop, stepwise = F, approximation = F)
-  plot(forecast(ARIMApop, tstop))
+  #plot(forecast(ARIMApop, tstop))
   forecast(ARIMApop, tstop)
   predict <- forecast(ARIMApop, tstop)
   predict$mean
@@ -1293,7 +1319,7 @@ Model_Case_Study <- function(inputs, scenario_income, scenario_prod, scenario_tr
   #chance of dying without infection from 'well', set to zero because background mortality is included in net births
   
   m_param[ , "dead_aft"] <- rep(1, n.t) 
-  #all those who die go to the afterlife
+  #all those who die go to the 'aft' compartment
   
   m_param[ , "birth"] <- popchange[1:n.t]
   #predicted net births in a given year
@@ -1439,15 +1465,22 @@ Model_Case_Study <- function(inputs, scenario_income, scenario_prod, scenario_tr
   #healthy person and b) someone with sequelae. The negative difference is the 'reward' 
   #of being in the sequelae state 
   
-  pv_fut_life <- c(rep(0,n.t-1))
+  remaining_ly <- inputs[parameter=="remaining_ly", Value]
   
-  for (i in 1:n.t-1){
+  #pv_fut_life <- c(rep(0,n.t-1))
+  pv_fut_life <- c(rep(0, remaining_ly))
+  
+  #for (i in 1:n.t-1){
+  for(i in 1:length(pv_fut_life)){
     pv_fut_life[i] <- inputs[parameter=="background_qol", Value] * (1-dr)^(i-1)
   }
   pv_life <- sum(pv_fut_life)
   
-  pv_fut_life_seq <- c(rep(0,n.t-1))
-  for (i in 1:n.t-1){
+  #pv_fut_life_seq <- c(rep(0,n.t-1))
+  pv_fut_life_seq <- c(rep(0,remaining_ly))
+  
+  #for (i in 1:n.t-1){
+  for(i in 1:length(pv_fut_life_seq)){
     pv_fut_life_seq[i] <- inputs[parameter=="qol_seq", Value] * (1-dr)^(i-1)
   }
   pv_life_seq <- sum(pv_fut_life_seq)
@@ -1464,7 +1497,7 @@ Model_Case_Study <- function(inputs, scenario_income, scenario_prod, scenario_tr
     (inputs[parameter == "qol_sick", Value] - inputs[parameter == "background_qol", Value])
   
   r_d <- -1 * pv_life #discounted QoL loss from death
-  r_seq <- pv_life_seq - pv_life # fixed this because we were previously assigning a benefit to sequelae (the subtraction was the wrong way around lol)
+  r_seq <- pv_life_seq - pv_life # fixed this because we were previously assigning a benefit to sequelae (the subtraction was the wrong way around)
   
   rwd_i <- c(0,r_r,r_s,r_d,0,r_seq) 
   
@@ -1487,7 +1520,7 @@ Model_Case_Study <- function(inputs, scenario_income, scenario_prod, scenario_tr
   #loss equal to the discounted value of forgone future earnings, going into the
   #'res' or 'sus states incurs a loss equal to the earnings that would have
   #been made during the time in hospital. After 1 period, all people in 'dead' go
-  #to 'afterlife', which has a reward of zero. 
+  #to 'aft' compartment, which has a reward of zero. 
   #Using the HCA, the forgone future earnings are those of expected remaining economically
   #active years. For FCA, it is the forgone earnings during the time that it takes
   #to find a replacement worker
@@ -2374,10 +2407,11 @@ Model_Case_Study <- function(inputs, scenario_income, scenario_prod, scenario_tr
   outputs <- data.table("Net Monetary Benefit"=NMB,
                         "Value of Productivity Gained"=NMB_prod,
                         "Cost Saved for Healthcare"=money_saved_health,
-                        "Value of DALYs Averted"=valuation_QALYs,
+                        "Value of QALYs Saved"=valuation_QALYs,
                         "Increased Profit - Pig Farms"=NMB_p_s,
                         "Increased Profit - Chicken Farms"=NMB_c_s,
-                        "Implementation Cost"=int_cost_total)
+                        "Implementation Cost"=int_cost_total,
+                        "QALYs Saved"=QALYs_saved)
   outputs
   
   return(outputs)
