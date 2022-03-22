@@ -51,7 +51,7 @@ ui <- dashboardPage(
       tabItem("howto",
               box(
                 title = "How to Use This Tool",
-                background = "fuchsia",
+                background = "green",
                 width = 12,
                 textOutput("introtext")
               ),
@@ -163,13 +163,13 @@ ui <- dashboardPage(
                   width = 12,
                   textOutput("countryname")),
               box(
-                title = "Composition of Total Net Monetary Benefit by Agent",
+                title = "Composition of Total Net Monetary Benefit by Agent ($USD)",
                 background = "green",
                 width = 12,
                 tableOutput("table")
               ),
               box(
-                title = "Threshold Price (Maximum Acceptable Annual Intervention Cost ($USD)",
+                title = "Threshold Price (Maximum Acceptable Annual Intervention Cost ($USD))",
                 background = "green",
                 width = 6,
                 textOutput("threshold_price")
@@ -181,6 +181,15 @@ ui <- dashboardPage(
 )
 
 server <- function(input, output) {
+  
+  #load main AHHME function
+  source("Functions.R")
+  
+  #set model scenarios
+  scenario_income <- "MIC"
+  scenario_prod <- "HCA"
+  scenario_transmission <- "med"
+  scenario_farm_effect <- "hi"
   
   #the explanatory text
   introtext <-             "Hello and welcome to the interactive Agriculture Human Health
@@ -199,15 +208,6 @@ server <- function(input, output) {
                            maximum annual budget that the public sector should devote to implementing an intervention with the
                            specified impact. There is also a breakdown of the total discounted net monetary benefit of the intervention
                            (across all sectors) over the time horizon considered"
-
-  #load model function
-  source("Functions.R")
-  
-  #set model scenarios
-  scenario_income <- "MIC"
-  scenario_prod <- "HCA"
-  scenario_transmission <- "med"
-  scenario_farm_effect <- "hi"
 
   #create meta-function which alters inputs according to output, and then produces the output table
   outputtablefunction = function(inputs){
