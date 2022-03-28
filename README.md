@@ -1,11 +1,10 @@
 # Agriculture-Human-Health-MicroEconomic (AHHME) Tool
-Code :computer: and necessary inputs :file_folder: for a holistic economic :chart: model for evaluating the cost-effectiveness :money_mouth_face: of AMR :microbe: interventions in agriculture :pig: :hatching_chick: across countries :earth_asia:, and with a case study in Viet Nam :vietnam:
+Code :computer: and necessary inputs :file_folder: for a holistic economic :chart: model for evaluating the cost-effectiveness :money_mouth_face: of AMR :microbe: interventions in agriculture :pig: :hatching_chick: across countries :earth_asia:, and with a case study in Viet Nam :vietnam:. The interactive online modelling tool version of this model is availble at (https://trescovius.shinyapps.io/Model-Code-and-Inputs/)
 
 # Paper Information
 Title: A Holistic Macroeconomic Model for Evaluating the Cost-Effectiveness of AMR Interventions in Agriculture across Countries <br> <br>
 Authors (alphabetical order): <br>
-Eve Tresco Emes, Gwenan M Knight, Nichola Naylor, Jeff Waage <br> <br>
-Other collaborators (alphabetical order) <br> Dang Sinh, Fred Unger, Le Trang <br>
+Eve Tresco Emes, Gwenan M Knight, Nichola Naylor, Dang Sinh, Le Trang, Jeff Waage <br> <br>
 
 
 # Contents of Repo
