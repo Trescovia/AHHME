@@ -36,6 +36,7 @@ library("rsq")
 library("forcats")
 library("patchwork")
 library("scales")
+library("patchwork")
 
 # Data files --------------------------------------------------------------
 
@@ -436,15 +437,6 @@ montecarlo_output$run <- seq(1,number_runs,1)
 
 montecarlo_output$LIC <- LIC_MC_Vector
 
-# jpeg("Outputs/Figure 2 A.jpg")
-# 
-# hist(LIC_MC_Vector,
-#      xlab = "Maximum Annual Cost",
-#      ylab = "Cumulative Density",
-#      main = "Distribution of Values from Montecarlo Simulation - LIC")
-# 
-# dev.off()
-
 write.xlsx(LIC_MC_Vector, "Outputs/MC Results LIC.xlsx")
 
 ##MIC
@@ -595,15 +587,6 @@ avg_MIC <- median(MIC_MC_Vector)
 
 montecarlo_output$MIC <- MIC_MC_Vector
 
-# jpeg("Outputs/Figure 2 B.jpg")
-# 
-# hist(MIC_MC_Vector,
-#      xlab = "Maximum Annual Cost",
-#      ylab = "Cumulative Density",
-#      main = "Distribution of Values from Montecarlo Simulation - MIC")
-# 
-# dev.off()
-
 write.xlsx(MIC_MC_Vector, "Outputs/MC Results MIC.xlsx")
 
 ##HIC
@@ -753,36 +736,96 @@ avg_HIC <- median(HIC_MC_Vector)
 
 montecarlo_output$HIC <- HIC_MC_Vector
 
-# jpeg("Outputs/Figure 2 C.jpg")
-# 
-# hist(HIC_MC_Vector,
-#      xlab = "Maximum Annual Cost",
-#      ylab = "Cumulative Density",
-#      main = "Distribution of Values from Montecarlo Simulation - HIC")
-# 
-# dev.off()
-
 write.xlsx(HIC_MC_Vector, "Outputs/MC Results HIC.xlsx")
 
-# #To load existing MC data
+#To load existing MC data
 # monteHIC <- read_excel("Outputs/MC results HIC.xlsx")[,2]
 # monteMIC <- read_excel("Outputs/MC results MIC.xlsx")[,2]
 # monteLIC <- read_excel("Outputs/MC results LIC.xlsx")[,2]
 # montecarlo_output <- as.data.frame(cbind(monteLIC, monteMIC, monteHIC))
 # colnames(montecarlo_output) <- c("LIC", "MIC", "HIC")
 
+summary_stats <- matrix(rep(0), ncol = 3, nrow = 3)
+colnames(summary_stats) <- c("Minimum Value", "Median Value", "Maximum Value")
+rownames(summary_stats) <- c("LIC", "MIC", "HIC")
+
+summary_stats["LIC", "Minimum Value"] <- min_LIC
+summary_stats["LIC", "Median Value"] <- avg_LIC
+summary_stats["LIC", "Maximum Value"] <- max_LIC
+
+summary_stats["MIC", "Minimum Value"] <- min_MIC
+summary_stats["MIC", "Median Value"] <- avg_MIC
+summary_stats["MIC", "Maximum Value"] <- max_MIC
+
+summary_stats["HIC", "Minimum Value"] <- min_HIC
+summary_stats["HIC", "Median Value"] <- avg_HIC
+summary_stats["HIC", "Maximum Value"] <- max_HIC
+
+write.xlsx(summary_stats, "Outputs/Summary Stats.xlsx")
+
+#for loading MC summary stat data
+# summary_stats <- read_excel("Outputs/Summary Stats.xlsx")
+# summary_stats <- as.data.frame(summary_stats)
+# rownames(summary_stats) <- c("LIC", "MIC", "HIC")
+# summary_stats <- summary_stats[,c(2,3,4)]
+
+# ### New figure instead of table 2   
+# tb1_2 / tb1 + plot_layout(heights=c(1,2)) +
+#   plot_annotation(tag_levels = 'A')
+# ggsave("Outputs/newfig_nottbl2.jpeg")
 
 # ggplot
 monte_output_plot <- montecarlo_output %>% pivot_longer(LIC:HIC)
 monte_output_plot$name <- factor(monte_output_plot$name, levels = c("LIC","MIC","HIC"))
 theme_set(theme_bw(base_size = 12))
-ggplot(monte_output_plot, aes(value)) + geom_histogram(bins = 20, aes(fill = name)) + 
+tb1_1 <-
+  ggplot(monte_output_plot, aes(value)) + geom_histogram(bins = 20, aes(fill = name)) + 
   facet_wrap(~name, scales = "free") + 
   scale_y_continuous("Number of simulations") + 
   scale_x_continuous("Threshold Price ($2019 USD)") + 
   scale_fill_discrete("Income group") + 
   geom_vline(xintercept = 0, linetype = "dashed")
-ggsave("Outputs/monte_carlo.jpeg", width = 13, height = 5)
+#ggsave("Outputs/monte_carlo.jpeg", width = 13, height = 5)
+
+### ggplot summary stats
+summary_stats_plt <- as.data.frame(summary_stats)
+colnames(summary_stats_plt) <- c("min","median","max")
+summary_stats_plt$income_group <- c("LIC","MIC","HIC")
+summary_stats_plt$income_group <- factor(summary_stats_plt$income_group, levels = c("LIC","MIC","HIC"))
+#summary_stats_plt %>% pivot_longer(cols = min:max)
+
+summary_stats_text <- summary_stats
+
+for(i in 1:3){
+  for(j in 1:3){
+    summary_stats_text[i,j] <- paste(as.numeric(round(summary_stats[i,j]/1000000, digits = 0)), "m", sep  =  "")
+  }
+}
+
+vLABELH <- c(summary_stats_text[1,3], summary_stats_text[2,3], summary_stats_text[3,3])
+vLINE1 <- c(summary_stats[1,3], summary_stats[2,3], summary_stats[3,3])
+
+vLABELL <- c(summary_stats_text[1,1], summary_stats_text[2,1], summary_stats_text[3,1])
+vLINE3 <- c(summary_stats[1,1], summary_stats[2,1], summary_stats[3,1])
+
+vLABELM <- c(summary_stats_text[1,2], summary_stats_text[2,2], summary_stats_text[3,2])
+vLINE2 <- c(summary_stats[1,2], summary_stats[2,2], summary_stats[3,2])
+
+tb1_2 <- ggplot(summary_stats_plt, aes(x=income_group, y = median, fill = income_group)) + geom_bar(stat = "identity") + 
+  geom_errorbar(aes(ymin = min, ymax = max)) +
+  scale_y_log10("Threshold Price\n(2019 $USD)\nfor Default Scenario") + 
+  scale_x_discrete("Income group") + 
+  scale_fill_discrete("Income group") +
+  geom_text(aes(label = vLABELH, y = vLINE1), vjust = -.5) +
+  geom_text(aes(label = vLABELL, y = vLINE3), vjust = 1.5) +
+  geom_text(aes(label = vLABELM, y = vLINE2), vjust = 1, hjust = 1)
+#ggsave("Outputs/Summary_default.pdf")  
+
+tb1_both <- tb1_1 / tb1_2
+
+tb1_both
+
+ggsave("Outputs/Combined_Fig4.pdf")
 
 # Figure 3 - Tornado Plots ------------------------------------------------
 
@@ -2455,48 +2498,27 @@ barplot(counts,
 
 dev.off()
 
-# Min, Max, and Median from Montecarlo ------------------------------------
+# countspos <- c(counts[1:4],0)
+# countsneg <- c(rep(0,4),counts[5])
+# 
+# nmbcompositionvnpos <- as.data.frame(cbind(names, countspos))
+# nmbcompositionvnneg <- as.data.frame(cbind(names, countsneg))
+# 
+# #figure4 <- 
+# 
+# ggplot() +
+#   geom_bar(data = nmbcompositionvnpos, aes(x = names, y = countspos, fill = names), stat = "identity") +
+#   geom_bar(data = nmbcompositionvnneg, aes(x = names, y = countsneg, fill = names), stat = "identity") +
+#   scale_fill_brewer(type = "seq", palette = 1)
 
-summary_stats <- matrix(rep(0), ncol = 3, nrow = 3)
-colnames(summary_stats) <- c("Minimum Value", "Median Value", "Maximum Value")
-rownames(summary_stats) <- c("LIC", "MIC", "HIC")
-
-summary_stats["LIC", "Minimum Value"] <- min_LIC
-summary_stats["LIC", "Median Value"] <- avg_LIC
-summary_stats["LIC", "Maximum Value"] <- max_LIC
-
-summary_stats["MIC", "Minimum Value"] <- min_MIC
-summary_stats["MIC", "Median Value"] <- avg_MIC
-summary_stats["MIC", "Maximum Value"] <- max_MIC
-
-summary_stats["HIC", "Minimum Value"] <- min_HIC
-summary_stats["HIC", "Median Value"] <- avg_HIC
-summary_stats["HIC", "Maximum Value"] <- max_HIC
-
-write.xlsx(summary_stats, "Outputs/Summary Stats.xlsx")
-
-#for loading existing MC data
-# summary_stats <- read_excel("Outputs/Summary Stats.xlsx")
-# summary_stats <- as.data.frame(summary_stats)
-# rownames(summary_stats) <- c("LIC", "MIC", "HIC")
-# summary_stats <- summary_stats[,c(2,3,4)]
-
-### ggplot summary stats
-summary_stats_plt <- as.data.frame(summary_stats)
-colnames(summary_stats_plt) <- c("min","median","max")
-summary_stats_plt$income_group <- c("LIC","MIC","HIC")
-summary_stats_plt$income_group <- factor(summary_stats_plt$income_group, levels = c("LIC","MIC","HIC"))
-#summary_stats_plt %>% pivot_longer(cols = min:max)
-tb1_2 <- ggplot(summary_stats_plt, aes(x=income_group, y = median, fill = income_group)) + geom_bar(stat = "identity") + 
-  geom_errorbar(aes(ymin = min, ymax = max)) +
-  scale_y_log10("Threshold Price\n(2019 $USD)\nfor Default Scenario") + 
-  scale_x_discrete("Income group") + 
-  scale_fill_discrete("Income group")
-ggsave("Outputs/Summary_default.pdf")  
-
-### New figure instead of table 2   
-tb1_2 / tb1 + plot_layout(heights=c(1,2)) +
-  plot_annotation(tag_levels = 'A')
-ggsave("Outputs/newfig_nottbl2.jpeg")
-
-
+# country <- c(rep("Vietnam", 5))
+# 
+# nmbcomposition <- as.data.frame(cbind(names, country, counts))
+# 
+# dat1 <- subset(nmbcomposition, counts >= 0)
+# dat2 <- subset(nmbcomposition, counts < 0)
+# 
+# ggplot() + 
+#   geom_bar(data = dat1, aes(x=country, y=counts, fill=names),stat = "identity") +
+#   geom_bar(data = dat2, aes(x=country, y=counts, fill=names),stat = "identity") +
+#   scale_fill_brewer(type = "seq", palette = 1)
