@@ -12,7 +12,7 @@
 
 library("data.table")
 library("readxl")
-library("stargazer")
+#library("stargazer")
 library("tidyverse")
 library("tseries") 
 library("forecast") 
@@ -20,23 +20,22 @@ library("dynlm")
 library("seastests")
 library("forecast")
 library("TSA")
-library("epiR")
+#library("epiR")
 library("extraDistr")
 library("MonoInc")
-library("pksensi")
-library("sensitivity")
+#library("pksensi")
+#library("sensitivity")
 library("xlsx")
 library("gridExtra")
 library("ggplot2")
 library("reshape2")
 library("here")
 library("devtools")
-library("multisensi")
-library("rsq")
+#library("multisensi")
+#library("rsq")
 library("forcats")
 library("patchwork")
 library("scales")
-library("patchwork")
 
 # Data files --------------------------------------------------------------
 
@@ -1614,23 +1613,25 @@ g1 <- ggplot() +
   geom_rect(data = fig3_data %>% filter(sp == "animal"), 
             aes(ymax=ymax, ymin=ymin, xmax=xmax, xmin=xmin, fill=variable)) +
   theme_bw() + 
-  theme(axis.title.y=element_blank(), legend.position = 'bottom',
+  theme(axis.text = element_text(size=12), 
+        axis.title.y=element_blank(), legend.position = 'bottom',
         legend.title = element_blank()) + 
   geom_hline(yintercept = base.value) +
   facet_grid(sp ~ ic, scales = "free") + 
   scale_x_continuous(breaks = seq(1:8), labels = order.parameters.animal) +
-  coord_flip()
+  coord_flip() 
 
 g2 <- ggplot() + 
   geom_rect(data = fig3_data %>% filter(sp == "human"), 
             aes(ymax=ymax, ymin=ymin, xmax=xmax, xmin=xmin, fill=variable)) +
   theme_bw() + 
-  theme(axis.title.y=element_blank(), legend.position = 'bottom',
+  theme(axis.text = element_text(size=12),
+        axis.title.y=element_blank(), legend.position = 'bottom',
         legend.title = element_blank()) + 
   geom_hline(yintercept = base.value) +
   facet_grid(sp ~ ic, scales = "free") + 
   scale_x_continuous(breaks = seq(1:length(order.parameters.human)), labels = order.parameters.human) +
-  coord_flip()
+  coord_flip() 
 
 g1 / g2
 ggsave("Outputs/figure3_ggplot.jpeg",width = 20, height = 14)
@@ -2498,27 +2499,18 @@ barplot(counts,
 
 dev.off()
 
-# countspos <- c(counts[1:4],0)
-# countsneg <- c(rep(0,4),counts[5])
-# 
-# nmbcompositionvnpos <- as.data.frame(cbind(names, countspos))
-# nmbcompositionvnneg <- as.data.frame(cbind(names, countsneg))
-# 
-# #figure4 <- 
-# 
-# ggplot() +
-#   geom_bar(data = nmbcompositionvnpos, aes(x = names, y = countspos, fill = names), stat = "identity") +
-#   geom_bar(data = nmbcompositionvnneg, aes(x = names, y = countsneg, fill = names), stat = "identity") +
-#   scale_fill_brewer(type = "seq", palette = 1)
+ggdata = as.data.frame(cbind(counts, names)) 
 
-# country <- c(rep("Vietnam", 5))
-# 
-# nmbcomposition <- as.data.frame(cbind(names, country, counts))
-# 
-# dat1 <- subset(nmbcomposition, counts >= 0)
-# dat2 <- subset(nmbcomposition, counts < 0)
-# 
-# ggplot() + 
-#   geom_bar(data = dat1, aes(x=country, y=counts, fill=names),stat = "identity") +
-#   geom_bar(data = dat2, aes(x=country, y=counts, fill=names),stat = "identity") +
-#   scale_fill_brewer(type = "seq", palette = 1)
+ggdata$names <- factor(ggdata$names, levels = c("Poultry Sector", "Pig Sector", "Productivity", "Healthcare (incl. QALYs saved)", 
+                                                "Implementation Cost"))
+
+ggdata$counts <- as.numeric(ggdata$counts)
+
+ggplot() +
+  geom_bar(data = ggdata, aes(x = names, y = counts), stat = "identity") +
+  theme_bw() +
+  scale_y_continuous("Bn 2019 $USD") +
+  scale_x_discrete("") +
+  ggtitle("Contribution to Net Monetary Benefit by Sector (Bn 2019 $USD)") 
+
+ggsave("Outputs/Figure 5.jpg")
