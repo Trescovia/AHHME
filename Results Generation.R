@@ -2511,6 +2511,6 @@ ggplot() +
   theme_bw() +
   scale_y_continuous("Bn 2019 $USD") +
   scale_x_discrete("") +
-  ggtitle("Contribution to Net Monetary Benefit by Sector (Bn 2019 $USD)") 
+  theme(text = element_text(size=16))
 
 ggsave("Outputs/Figure 5.jpg")
