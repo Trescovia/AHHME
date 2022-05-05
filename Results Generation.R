@@ -1608,33 +1608,68 @@ fig3_data <- fig3_data_orig %>%
          xmax=as.numeric(para)+width/2) 
 fig3_data$ic <- factor(fig3_data$ic, levels = c("LIC","MIC","HIC"))
 
+##new
+fig3_data$ymax_mils <- fig3_data$ymax/1e+08
+fig3_data$ymin_mils <- fig3_data$ymin/1e+08
+##new
                    
-g1 <- ggplot() + 
-  geom_rect(data = fig3_data %>% filter(sp == "animal"), 
-            aes(ymax=ymax, ymin=ymin, xmax=xmax, xmin=xmin, fill=variable)) +
-  theme_bw() + 
-  theme(axis.text = element_text(size=12), 
-        axis.title.y=element_blank(), legend.position = 'bottom',
-        legend.title = element_blank()) + 
-  geom_hline(yintercept = base.value) +
-  facet_grid(sp ~ ic, scales = "free") + 
-  scale_x_continuous(breaks = seq(1:8), labels = order.parameters.animal) +
-  coord_flip() 
+# g1 <- ggplot() +
+#   geom_rect(data = fig3_data %>% filter(sp == "animal"),
+#             aes(ymax=ymax, ymin=ymin, xmax=xmax, xmin=xmin, fill=variable)) +
+#   theme_bw() +
+#   theme(axis.text = element_text(size=12),
+#         axis.title.y=element_blank(), legend.position = 'bottom',
+#         legend.title = element_blank()) +
+#   geom_hline(yintercept = base.value) +
+#   facet_grid(sp ~ ic, scales = "free") +
+#   scale_x_continuous(breaks = seq(1:8), labels = order.parameters.animal) +
+#   coord_flip()
+# 
+# g2 <- ggplot() +
+#   geom_rect(data = fig3_data %>% filter(sp == "human"),
+#             aes(ymax=ymax, ymin=ymin, xmax=xmax, xmin=xmin, fill=variable)) +
+#   theme_bw() +
+#   theme(axis.text = element_text(size=12),
+#         axis.title.y=element_blank(), legend.position = 'bottom',
+#         legend.title = element_blank()) +
+#   geom_hline(yintercept = base.value) +
+#   facet_grid(sp ~ ic, scales = "free") +
+#   scale_x_continuous(breaks = seq(1:length(order.parameters.human)), labels = order.parameters.human) +
+#   coord_flip()
+# 
+# g1 / g2
+# ggsave("Outputs/figure3_ggplot.jpeg",width = 20, height = 14)
 
-g2 <- ggplot() + 
-  geom_rect(data = fig3_data %>% filter(sp == "human"), 
-            aes(ymax=ymax, ymin=ymin, xmax=xmax, xmin=xmin, fill=variable)) +
-  theme_bw() + 
+##new
+g1 <- ggplot() +
+  geom_rect(data = fig3_data %>% filter(sp == "animal"),
+            aes(ymax=ymax_mils, ymin=ymin_mils, xmax=xmax, xmin=xmin, fill=variable)) +
+  theme_bw() +
   theme(axis.text = element_text(size=12),
         axis.title.y=element_blank(), legend.position = 'bottom',
-        legend.title = element_blank()) + 
+        legend.title = element_blank()) +
   geom_hline(yintercept = base.value) +
-  facet_grid(sp ~ ic, scales = "free") + 
+  facet_grid(sp ~ ic, scales = "free") +
+  scale_x_continuous(breaks = seq(1:8), labels = order.parameters.animal) +
+  coord_flip() +
+  scale_fill_discrete(limits = rev(order.parameters.animal)) +
+  scale_y_continuous(limits = c(-5.0e+08,5.0e+08)/1e+08,"Millions (2019 $USD per year)")
+g2 <- ggplot() +
+  geom_rect(data = fig3_data %>% filter(sp == "human"),
+            aes(ymax=ymax_mils, ymin=ymin_mils, xmax=xmax, xmin=xmin, fill=variable)) +
+  theme_bw() +
+  theme(axis.text = element_text(size=12),
+        axis.title.y=element_blank(), legend.position = 'bottom',
+        legend.title = element_blank()) +
+  geom_hline(yintercept = base.value) +
+  facet_grid(sp ~ ic, scales = "free") +
   scale_x_continuous(breaks = seq(1:length(order.parameters.human)), labels = order.parameters.human) +
-  coord_flip() 
-
+  coord_flip() +
+  scale_fill_discrete(limits = rev(order.parameters.human)) +
+  scale_y_continuous(limits = c(-1.0e+09,2.5e+09)/1e+08, "Millions (2019 $USD per year)") #labels = comma,
 g1 / g2
 ggsave("Outputs/figure3_ggplot.jpeg",width = 20, height = 14)
+##new
 
 # Table 2 - Global Sensitivity Analysis -----------------------------------
 #' 
